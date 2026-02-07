@@ -1,29 +1,35 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../features/auth/services/auth_service.dart';
 import '../models/dashboard.dart';
-import '../api/api_config.dart';
 
 class DashboardService {
-  static const storage = FlutterSecureStorage();
+  static const String baseUrl = "http://localhost:8000";
 
   static Future<CustomerDashboard> fetchDashboard() async {
-    final token = await storage.read(key: 'token');
+    final token = await AuthService.getToken();
 
-    if (token == null) {
+    debugPrint("DASHBOARD SERVICE TOKEN => $token");
+
+    if (token == null || token.isEmpty) {
       throw Exception("No token found");
     }
 
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/dashboard/customer'),
+      Uri.parse("$baseUrl/dashboard/customer"), // ✅ FIXED
       headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
       },
     );
 
+    debugPrint("DASHBOARD STATUS => ${response.statusCode}");
+    debugPrint("DASHBOARD BODY => ${response.body}");
+
     if (response.statusCode != 200) {
-      throw Exception("API error ${response.statusCode}");
+      throw Exception("Failed to load dashboard");
     }
 
     return CustomerDashboard.fromJson(

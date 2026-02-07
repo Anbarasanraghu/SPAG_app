@@ -1,5 +1,8 @@
 class ApiConfig {
   // For Chrome / Emulator
+  // static const String baseUrl = "http://127.0.0.1:8000";
+
+  // For physical device - CHANGE THIS TO YOUR COMPUTER'S IP
   static const String baseUrl = "http://127.0.0.1:8000";
 
   // Later for production:

@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.core.security import get_current_user
+from app.routers.dashboard import get_db
+from app.models.customer import Customer
 
 from app.database import SessionLocal
 from app.models.installation import Installation
 from app.models.customer import Customer
+from app.models.product_request import ProductRequest
 from app.models.purifier_model import PurifierModel
 from app.schemas.installation import InstallationCreate, InstallationResponse
 from app.core.service_generator import generate_services
@@ -38,6 +42,21 @@ def create_installation(data: InstallationCreate, db: Session = Depends(get_db))
     db.add(installation)
     db.commit()
     db.refresh(installation)
+    request = db.query(ProductRequest).filter(
+    ProductRequest.customer_id == data.customer_id,
+    ProductRequest.purifier_model_id == data.purifier_model_id,
+    ProductRequest.status != "INSTALLED"
+    ).first()
+
+    if request:
+        request.status = "INSTALLED"
+        db.commit()
     generate_services(db, installation, model)
 
     return installation
+
+@router.get("/technician/requests")
+def tech_requests(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return db.query(ProductRequest).filter_by(
+        assigned_technician_id=user['user_id']
+    ).all()

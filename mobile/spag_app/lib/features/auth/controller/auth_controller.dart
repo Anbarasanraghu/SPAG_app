@@ -1,26 +1,41 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 import '../api/auth_api.dart';
 
-class AuthController {
-  final storage = const FlutterSecureStorage();
+/// Simple response model returned after OTP verification
+class AuthResponse {
+  final String token;
+  final String role;
 
+  AuthResponse({
+    required this.token,
+    required this.role,
+  });
+}
+
+/// AuthController
+/// - Talks ONLY to backend
+/// - DOES NOT store token
+/// - Storage is handled by AuthService (UI layer)
+class AuthController {
+  /// Send OTP to given mobile number
   Future<void> sendOtp(String mobile) async {
     await AuthApi.sendOtp(mobile);
   }
 
-  Future<String> verifyOtp(String mobile, String otp) async {
-  final data = await AuthApi.verifyOtp(mobile, otp);
+  /// Verify OTP and return auth data
+  /// ❌ Does NOT save token
+  /// ✅ Only returns token + role
+  Future<AuthResponse> verifyOtp(String mobile, String otp) async {
+    final data = await AuthApi.verifyOtp(mobile, otp);
 
-  if (data['token'] == null || data['role'] == null) {
-    throw Exception("Token or role missing from response");
+    if (data['token'] == null || data['role'] == null) {
+      debugPrint('AuthController.verifyOtp: invalid response => $data');
+      throw Exception('Token or role missing from response');
+    }
+
+    return AuthResponse(
+      token: data['token'],
+      role: data['role'],
+    );
   }
-
-  await storage.write(key: 'token', value: data['token']);
-  await storage.write(key: 'role', value: data['role']);
-
-  final savedToken = await storage.read(key: 'token');
-  print("SAVED TOKEN => $savedToken");
-
-  return data['role']; // customer | technician
-}
 }

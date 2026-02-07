@@ -6,7 +6,7 @@ import jwt
 
 security = HTTPBearer()
 
-SECRET_KEY = "CHANGE_THIS_SECRET"
+SECRET_KEY = "spag_super_secure_secret_key_2026_admin_panel"
 ALGORITHM = "HS256"
 
 def create_access_token(data: dict):

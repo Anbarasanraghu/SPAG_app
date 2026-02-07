@@ -16,6 +16,8 @@ class _MobileInputScreenState extends State<MobileInputScreen> {
   void sendOtp() async {
     await authController.sendOtp(mobileController.text);
 
+    if (!mounted) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(

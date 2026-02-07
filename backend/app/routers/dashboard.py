@@ -8,6 +8,7 @@ from app.models.customer import Customer
 from app.models.installation import Installation
 from app.models.purifier_model import PurifierModel
 from app.models.service_history import ServiceHistory
+from app.core.service_generator import generate_services
 from app.schemas.dashboard import CustomerDashboardResponse, ServiceItem
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -46,6 +47,19 @@ def customer_dashboard(customer_id: int, db: Session = Depends(get_db)):
         .all()
     )
 
+    # If no services were generated previously, generate them on-demand
+    if not services:
+        print(f"No service_history for installation {installation.id}, generating services")
+        model = db.query(PurifierModel).filter(PurifierModel.id == installation.purifier_model_id).first()
+        if model and model.free_services > 0:
+            generate_services(db, installation, model)
+            services = (
+                db.query(ServiceHistory)
+                .filter(ServiceHistory.installation_id == installation.id)
+                .order_by(ServiceHistory.service_number)
+                .all()
+            )
+
     next_service = next(
         (s.service_date for s in services if s.status == "UPCOMING"),
         None
@@ -76,5 +90,12 @@ def my_dashboard(
     customer = db.query(Customer).filter(
         Customer.user_id == current_user["user_id"]
     ).first()
+
+    # ✅ USER EXISTS BUT NOT YET A CUSTOMER
+    if not customer:
+        return {
+            "installations": [],
+            "services": []
+        }
 
     return customer_dashboard(customer.id, db)
