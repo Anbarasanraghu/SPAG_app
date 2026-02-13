@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'product_requests_screen.dart';
 import 'pending_services_screen.dart';
 import 'manage_users_screen.dart';
-import 'technician_service_logs_screen.dart';
+import 'service_status_logs_screen.dart';
+import 'technician_activity_logs_screen.dart';
 import 'all_customers_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
@@ -104,17 +105,33 @@ class AdminDashboardScreen extends StatelessWidget {
               );
             },
           ),
+          
           _adminTile(
             context,
-            title: "Technician Service Logs",
-            subtitle: "Monitor technician activities",
-            icon: Icons.engineering_outlined,
-            color: const Color(0xFF3B82F6),
+            title: "Service Status Logs",
+            subtitle: "View status change history for all services",
+            icon: Icons.history_toggle_off,
+            color: const Color(0xFF2563EB),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const TechnicianServiceLogsScreen(),
+                  builder: (_) => const ServiceStatusLogsScreen(),
+                ),
+              );
+            },
+          ),
+          _adminTile(
+            context,
+            title: "Technician Activity Logs",
+            subtitle: "View actions performed by all technicians",
+            icon: Icons.timeline,
+            color: const Color(0xFF06B6D4),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TechnicianActivityLogsScreen(),
                 ),
               );
             },

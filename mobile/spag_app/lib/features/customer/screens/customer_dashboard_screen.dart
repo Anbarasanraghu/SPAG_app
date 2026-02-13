@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../core/api/dashboard_service.dart';
-import '../../core/models/dashboard.dart';
-import '../auth/services/auth_service.dart';
+import '../../../core/api/dashboard_service.dart';
+import '../../../core/api/service_history_service.dart';
+import '../../../core/models/dashboard.dart';
+import '../../../core/services/purifier_model_cache.dart';
+import '../../auth/services/auth_service.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
   const CustomerDashboardScreen({super.key});
@@ -59,7 +61,64 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
   Future<CustomerDashboard> _loadDashboard() async {
     final token = await AuthService.getToken();
     debugPrint("CUSTOMER DASHBOARD TOKEN => $token");
-    return DashboardService.fetchDashboard();
+    
+    // Fetch dashboard info
+    var dashboard = await DashboardService.fetchDashboard();
+    debugPrint("[CustomerDashboard] Dashboard loaded: customerId=${dashboard.customerId}, model=${dashboard.purifierModel}, installDate=${dashboard.installDate}, services=${dashboard.services.length}");
+    
+    // Try to fetch service history separately
+    try {
+      debugPrint("[CustomerDashboard] Attempting to fetch service history from separate endpoint...");
+      final serviceHistory = await ServiceHistoryService.fetchServiceHistory();
+      debugPrint("[CustomerDashboard] Service history fetched: ${serviceHistory.length} records");
+      
+      // If we got service history from the separate endpoint, use it
+      if (serviceHistory.isNotEmpty) {
+        debugPrint("[CustomerDashboard] Using service history from separate endpoint");
+        dashboard = CustomerDashboard(
+          customerId: dashboard.customerId,
+          purifierModel: dashboard.purifierModel,
+          installDate: dashboard.installDate,
+          nextServiceDate: dashboard.nextServiceDate,
+          services: serviceHistory,
+        );
+      }
+    } catch (e) {
+      debugPrint("[CustomerDashboard] Service history fetch failed: $e");
+    }
+    
+    // Calculate next service date if not provided
+    if ((dashboard.nextServiceDate == null || dashboard.nextServiceDate!.isEmpty) && 
+        dashboard.installDate.isNotEmpty) {
+      try {
+        // Get purifier model info to find service interval
+        final modelId = int.tryParse(dashboard.purifierModel) ?? 0;
+        if (modelId > 0) {
+          final model = await PurifierModelCache().getModel(modelId);
+          if (model != null) {
+            // Parse install date and add service interval
+            final installDate = DateTime.parse(dashboard.installDate);
+            final nextService = installDate.add(Duration(days: model.serviceIntervalDays));
+            final formattedDate = '${nextService.year}-${nextService.month.toString().padLeft(2, '0')}-${nextService.day.toString().padLeft(2, '0')}';
+            
+            debugPrint("[CustomerDashboard] Calculated next service: $installDate + ${model.serviceIntervalDays}d = $formattedDate");
+            
+            dashboard = CustomerDashboard(
+              customerId: dashboard.customerId,
+              purifierModel: dashboard.purifierModel,
+              installDate: dashboard.installDate,
+              nextServiceDate: formattedDate,
+              services: dashboard.services,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint("[CustomerDashboard] Error calculating next service date: $e");
+      }
+    }
+    
+    debugPrint("[CustomerDashboard] Final nextServiceDate: ${dashboard.nextServiceDate}");
+    return dashboard;
   }
 
   @override
@@ -322,13 +381,29 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              data.purifierModel,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            FutureBuilder<String>(
+                              future: _getModelName(data.purifierModel),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  );
+                                }
+                                
+                                return Text(
+                                  snapshot.data ?? data.purifierModel,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -354,6 +429,20 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
         ),
       ),
     );
+  }
+
+  Future<String> _getModelName(String modelIdStr) async {
+    try {
+      final modelId = int.tryParse(modelIdStr) ?? 0;
+      if (modelId == 0) return modelIdStr;
+      
+      final name = await PurifierModelCache().getModelName(modelId);
+      debugPrint('[CustomerDashboard] Model $modelId resolved to: $name');
+      return name;
+    } catch (e) {
+      debugPrint('[CustomerDashboard] Error resolving model name: $e');
+      return modelIdStr;
+    }
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {

@@ -33,23 +33,38 @@ class ServiceDetail {
   });
 
   factory ServiceDetail.fromJson(Map<String, dynamic> json) {
+    // Defensive parsing: handle missing keys gracefully
+    final service = json['service'] as Map<String, dynamic>? ?? {};
+    final customer = json['customer'] as Map<String, dynamic>? ?? {};
+    final product = json['product'] as Map<String, dynamic>? ?? {};
+    final technician = json['technician'] as Map<String, dynamic>?;
+
+    int? parseInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is String) return int.tryParse(v);
+      return null;
+    }
+
+    String safeString(dynamic v) => v == null ? '' : v.toString();
+
     return ServiceDetail(
-      serviceId: json['service']['id'],
-      serviceDate: json['service']['date'],
-      serviceNumber: json['service']['number'],
-      status: json['service']['status'],
+      serviceId: parseInt(service['id']) ?? 0,
+      serviceDate: safeString(service['date']),
+      serviceNumber: parseInt(service['number']) ?? 0,
+      status: safeString(service['status']),
 
-      customerId: json['customer']['id'],
-      customerName: json['customer']['name'],
-      customerPhone: json['customer']['phone'],
-      customerAddress: json['customer']['address'],
+      customerId: parseInt(customer['id']) ?? 0,
+      customerName: safeString(customer['name']),
+      customerPhone: safeString(customer['phone']),
+      customerAddress: safeString(customer['address'] is Map ? (customer['address']['line1'] ?? '') : customer['address']),
 
-      installationId: json['product']['installation_id'],
-      productModel: json['product']['model_name'],
+      installationId: parseInt(product['installation_id']) ?? 0,
+      productModel: safeString(product['model_name']),
 
-      technicianId: json['technician']['id'],
-      technicianName: json['technician']['name'],
-      technicianPhone: json['technician']['phone'],
+      technicianId: parseInt(technician?['id']),
+      technicianName: technician != null ? safeString(technician['name']) : null,
+      technicianPhone: technician != null ? safeString(technician['phone']) : null,
     );
   }
 }

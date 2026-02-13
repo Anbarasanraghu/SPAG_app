@@ -4,7 +4,9 @@ from app.models.product_request import ProductRequest
 from app.models.installation import Installation
 from app.models.purifier_model import PurifierModel
 from app.models.customer import Customer
-from app.core.security import require_admin
+from app.models.service_status_log import ServiceStatusLog
+from app.models.technician_activity_log import TechnicianActivityLog
+from app.core.security import require_admin , require_technician 
 from app.database import SessionLocal, get_db
 from app.models.user import User
 from app.models.service_history import ServiceHistory
@@ -69,15 +71,37 @@ def assign_technician(
     service_id: int,
     technician_id: int,
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    user=Depends(require_admin),
 ):
-    service = db.query(ServiceHistory).get(service_id)
+    service = db.query(ServiceHistory).filter(
+        ServiceHistory.id == service_id
+    ).first()
 
     if not service:
-        raise HTTPException(status_code=404, detail="Service not found")
+        raise HTTPException(404, "Service not found")
+
+    old_status = service.status
 
     service.technician_id = technician_id
     service.status = "ASSIGNED"
+
+    # 🔹 Status log
+    status_log = ServiceStatusLog(
+        service_id=service.id,
+        old_status=old_status,
+        new_status="ASSIGNED",
+        changed_by=user['user_id'],
+    )
+
+    # 🔹 Technician activity
+    tech_log = TechnicianActivityLog(
+        technician_id=technician_id,
+        service_id=service.id,
+        action="ASSIGNED",
+    )
+
+    db.add(status_log)
+    db.add(tech_log)
     db.commit()
 
     return {"message": "Technician assigned"}
@@ -108,14 +132,22 @@ def all_customers(
             "customer_id": customer.id,
             "name": user.name,
             "phone": user.phone,
-            "address": customer.address,
+            "customer": {
+                "address": {
+                    "line1": customer.address_line1,
+                    "line2": customer.address_line2,
+                    "city": customer.city,
+                    "state": customer.state,
+                    "pincode": customer.pincode,
+                    "landmark": customer.landmark,
+                },},
             "installations": installations_count,
         })
 
     return response
 
 
-@router.get("/admin/technician/services")
+@router.get("/technician/services")
 def technician_logs(
     db: Session = Depends(get_db),
     admin=Depends(require_admin)
@@ -145,6 +177,107 @@ def technician_logs(
 
     return logs
 
+# 🔹 NEW ENDPOINT: Service Status Logs
+@router.get("/services/{service_id}/status-logs")
+def get_service_status_logs(
+    service_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get all status changes for a service"""
+    logs = db.query(ServiceStatusLog).filter(
+        ServiceStatusLog.service_id == service_id
+    ).order_by(ServiceStatusLog.id).all()
+    
+    return [{
+        "id": log.id,
+        "service_id": log.service_id,
+        "old_status": log.old_status,
+        "new_status": log.new_status,
+        "changed_at": log.changed_at,
+        "changed_by": log.changed_by,
+        # "changed_by_role": log.changed_by_role,
+    } for log in logs]
+
+
+# Optional endpoint: accept no ID (or a query param) so UI doesn't have to prompt for a specific service id
+@router.get("/services/status-logs")
+def get_service_status_logs_optional(
+    service_id: int | None = None,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get service status logs. If `service_id` query param is provided, filter by it; otherwise return all logs."""
+    query = db.query(ServiceStatusLog).order_by(ServiceStatusLog.id.desc())
+    if service_id is not None:
+        query = query.filter(ServiceStatusLog.service_id == service_id)
+
+    logs = query.all()
+    return [{
+        "id": log.id,
+        "service_id": log.service_id,
+        "old_status": log.old_status,
+        "new_status": log.new_status,
+        "changed_at": log.changed_at,
+        "changed_by": log.changed_by,
+        # "changed_by_role": log.changed_by_role,
+    } for log in logs]
+
+
+@router.get("/admin/services/status-logs")
+def get_all_service_status_logs(
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get all service status logs"""
+    logs = db.query(ServiceStatusLog).order_by(ServiceStatusLog.id.desc()).all()
+    return [{
+        "id": log.id,
+        "service_id": log.service_id,
+        "old_status": log.old_status,
+        "new_status": log.new_status,
+        "changed_at": log.changed_at,
+        "changed_by": log.changed_by,
+        # "changed_by_role": log.changed_by_role,
+    } for log in logs]
+
+
+# 🔹 NEW ENDPOINT: Technician Activity Logs
+@router.get("/technicians/{technician_id}/activity-logs")
+def get_technician_activity_logs(
+    technician_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get all activities for a technician"""
+    logs = db.query(TechnicianActivityLog).filter(
+        TechnicianActivityLog.technician_id == technician_id
+    ).order_by(TechnicianActivityLog.id.desc()).all()
+    
+    return [{
+        "id": log.id,
+        "technician_id": log.technician_id,
+        "service_id": log.service_id,
+        "action": log.action,
+        "created_at": log.created_at,
+    } for log in logs]
+
+
+@router.get("/admin/technicians/activity-logs")
+def get_all_technician_activity_logs(
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get all technician activity logs"""
+    logs = db.query(TechnicianActivityLog).order_by(TechnicianActivityLog.id.desc()).all()
+    return [{
+        "id": log.id,
+        "technician_id": log.technician_id,
+        "service_id": log.service_id,
+        "action": log.action,
+        "created_at": log.created_at,
+    } for log in logs]
+
 @router.get("/admin/product-requests")
 def get_requests(db: Session = Depends(get_db)):
     return db.query(ProductRequest).all()
@@ -157,39 +290,43 @@ def assign_tech(id: int, technician_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Assigned"}
 
-@router.put("/admin/services/{service_id}/status")
+@router.put("/technician/services/{service_id}/status")
 def update_service_status(
     service_id: int,
-    status: str,
+    status: str,  # IN_PROGRESS / COMPLETED
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    user=Depends(require_technician),
 ):
-    service = db.query(ServiceHistory).get(service_id)
+    service = db.query(ServiceHistory).filter(
+        ServiceHistory.id == service_id,
+        ServiceHistory.technician_id == user.id,
+    ).first()
 
     if not service:
-        raise HTTPException(status_code=404, detail="Service not found")
+        raise HTTPException(404, "Service not found")
 
-    # 🔒 Enforce valid transitions
-    allowed_transitions = {
-        "UPCOMING": ["ASSIGNED"],
-        "ASSIGNED": ["COMPLETED"],
-    }
-
-    current = service.status
-    if status not in allowed_transitions.get(current, []):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot change status from {current} to {status}"
-        )
-
+    old_status = service.status
     service.status = status
+
+    # 🔹 Status log
+    db.add(ServiceStatusLog(
+        service_id=service.id,
+        old_status=old_status,
+        new_status=status,
+        changed_by=user.id,
+        changed_by_role="technician",
+    ))
+
+    # 🔹 Technician activity
+    db.add(TechnicianActivityLog(
+        technician_id=user.id,
+        service_id=service.id,
+        action=status,
+    ))
+
     db.commit()
 
-    return {
-        "message": "Status updated",
-        "service_id": service.id,
-        "status": service.status,
-    }
+    return {"message": "Service updated"}
 
 
 @router.get("/admin/services/{service_id}/details")
@@ -232,11 +369,18 @@ def service_details(
             "status": service.status,
         },
         "customer": {
-            "id": customer.id,
-            "name": customer_user.name,
-            "phone": customer_user.phone,
-            "address": customer.address,
-        },
+                "id": customer.id,
+                "name": customer_user.name,
+                "phone": customer_user.phone,
+                "address": {
+                    "line1": customer.address_line1,
+                    "line2": customer.address_line2,
+                    "city": customer.city,
+                    "state": customer.state,
+                    "pincode": customer.pincode,
+                    "landmark": customer.landmark,
+                },
+            },
         "product": {
             "installation_id": installation.id,
             "model_name": model.name,
@@ -247,3 +391,13 @@ def service_details(
             "phone": technician.phone if technician else None,
         }
     }
+
+@router.get("/technician/services")
+def technician_services(
+    db: Session = Depends(get_db),
+    user=Depends(require_technician),
+):
+    return db.query(ServiceHistory).filter(
+        ServiceHistory.technician_id == user.id,
+        ServiceHistory.status.in_(["ASSIGNED", "IN_PROGRESS"])
+    ).all()

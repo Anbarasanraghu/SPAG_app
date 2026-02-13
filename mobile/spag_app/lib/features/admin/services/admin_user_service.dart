@@ -4,9 +4,10 @@ import 'package:http/http.dart' as http;
 
 import '../models/admin_user.dart';
 import '../../auth/services/auth_service.dart';
+import '../../../core/api/api_config.dart';
 
 class AdminUserService {
-  static const String baseUrl = "http://localhost:8000";
+  static const String baseUrl = ApiConfig.baseUrl;
 
   /// Fetch all users (ADMIN ONLY)
   static Future<List<AdminUser>> fetchUsers() async {

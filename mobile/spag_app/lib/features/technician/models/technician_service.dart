@@ -4,6 +4,7 @@ class TechnicianService {
   final int installationId;
   final int serviceNumber;
   final String serviceDate;
+  final String? status;
 
   TechnicianService({
     required this.serviceId,
@@ -11,15 +12,17 @@ class TechnicianService {
     required this.installationId,
     required this.serviceNumber,
     required this.serviceDate,
+    this.status,
   });
 
   factory TechnicianService.fromJson(Map<String, dynamic> json) {
     return TechnicianService(
-      serviceId: json['service_id'],
+      serviceId: json['id'] ?? json['service_id'],
       customerId: json['customer_id'],
       installationId: json['installation_id'],
       serviceNumber: json['service_number'],
-      serviceDate: json['service_date'],
+      serviceDate: json['service_date'].toString(),
+      status: json['status'],
     );
   }
 }

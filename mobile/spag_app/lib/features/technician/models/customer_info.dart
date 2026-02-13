@@ -13,10 +13,10 @@ class CustomerInfo {
 
   factory CustomerInfo.fromJson(Map<String, dynamic> json) {
     return CustomerInfo(
-      customerId: json['customer_id'],
-      name: json['name'],
-      phone: json['phone'],
-      address: json['address'],
+      customerId: json['customer_id'] ?? 0,
+      name: (json['name'] as String?) ?? 'Unknown',
+      phone: (json['phone'] as String?) ?? '',
+      address: (json['address'] as String?) ?? '',
     );
   }
 }

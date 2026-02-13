@@ -275,7 +275,7 @@ class _TechnicianServiceLogsScreenState
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => ServiceDetailScreen(
-                                        serviceId: log.serviceId,
+                                        serviceId: log.id,
                                       ),
                                     ),
                                   );
@@ -293,7 +293,7 @@ class _TechnicianServiceLogsScreenState
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  "${log.technicianName} → ${log.customerName}",
+                                                  "${log.technicianName ?? 'Technician'} → ${log.customerName ?? 'Customer'}",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
@@ -374,7 +374,7 @@ class _TechnicianServiceLogsScreenState
                                                     ),
                                                     const SizedBox(height: 2),
                                                     Text(
-                                                      "${log.serviceId}",
+                                                      "${log.id}",
                                                       style: const TextStyle(
                                                         fontSize: 14,
                                                         fontWeight: FontWeight.w600,
@@ -437,14 +437,11 @@ class _TechnicianServiceLogsScreenState
                                           child: ElevatedButton(
                                             onPressed: () async {
                                               try {
-                                                await TechnicianServiceLogService
-                                                    .updateServiceStatus(
-                                                  serviceId: log.serviceId,
+                                                await TechnicianServiceLogService.updateServiceStatus(
+                                                  serviceId: log.id,
                                                   status: "COMPLETED",
                                                 );
-
-                                                _loadLogs(); // 🔄 refresh
-                                                
+                                                _loadLogs();
                                                 if (context.mounted) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(

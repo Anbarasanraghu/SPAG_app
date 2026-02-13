@@ -2,6 +2,14 @@ from datetime import timedelta
 from app.models.service_history import ServiceHistory
 
 def generate_services(db, installation, purifier_model):
+
+    if not installation.install_date:
+        raise ValueError("Installation date is required")
+
+    if purifier_model.free_services <= 0:
+        print("No free services configured")
+        return
+
     services = []
 
     for i in range(1, purifier_model.free_services + 1):
@@ -16,7 +24,8 @@ def generate_services(db, installation, purifier_model):
             service_date=service_date,
             status="UPCOMING"
         )
+
         services.append(service)
 
     db.add_all(services)
-    db.commit()
+    print(f"Generated {len(services)} services")

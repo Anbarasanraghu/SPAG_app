@@ -60,3 +60,19 @@ def tech_requests(db: Session = Depends(get_db), user=Depends(get_current_user))
     return db.query(ProductRequest).filter_by(
         assigned_technician_id=user['user_id']
     ).all()
+
+@router.get("/customer/{customer_id}")
+def get_customer_installations(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    """Get all installations for a customer"""
+    installations = db.query(Installation).filter(
+        Installation.customer_id == customer_id
+    ).all()
+    
+    if not installations:
+        raise HTTPException(status_code=404, detail="No installations found")
+    
+    return installations

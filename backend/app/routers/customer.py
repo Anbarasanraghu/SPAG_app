@@ -49,7 +49,6 @@ def create_customer(data: CustomerCreate, db: Session = Depends(get_db)):
 def get_customer(customer_id: int, db: Session = Depends(get_db)):
     customer = (
         db.query(Customer)
-        .join(User, Customer.user_id == User.id)
         .filter(Customer.id == customer_id)
         .first()
     )
@@ -61,5 +60,5 @@ def get_customer(customer_id: int, db: Session = Depends(get_db)):
         "customer_id": customer.id,
         "name": customer.user.name,
         "phone": customer.user.phone,
-        "address": customer.address
+        "address": f"{customer.address_line1}, {customer.address_line2 or ''}, {customer.city}, {customer.state} {customer.pincode}".replace(", , ", ", ")
     }

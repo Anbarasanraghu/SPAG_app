@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../controller/auth_controller.dart';
-import 'otp_screen.dart';
+import '../../auth/services/auth_service.dart';
+import '../../customer/screens/customer_profile_form_screen.dart';
+import '../../customer/screens/customer_dashboard_screen.dart';
+import '../../admin/screens/admin_dashboard_screen.dart';
+import '../../technician/screens/technician_home_screen.dart';
+import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,25 +16,60 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final mobileController = TextEditingController();
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
   final authController = AuthController();
   bool loading = false;
+  bool obscure = true;
 
-  void sendOtp() async {
+  Future<void> login() async {
     setState(() => loading = true);
+    try {
+      final resp = await authController.login(phoneController.text.trim(), passwordController.text);
 
-    await authController.sendOtp(mobileController.text);
+      await AuthService.saveToken(resp.token);
+      await AuthService.saveRole(resp.role);
 
-    setState(() => loading = false);
+      if (!mounted) return;
 
-    if (!mounted) return;
+      // Route based on role
+      Widget nextScreen;
+      switch (resp.role) {
+        case 'admin':
+          nextScreen = const AdminDashboardScreen();
+          break;
+        case 'technician':
+          nextScreen = const TechnicianHomeScreen();
+          break;
+        case 'customer':
+        default:
+          if (!resp.profileExists) {
+            nextScreen = const CustomerProfileFormScreen();
+          } else {
+            nextScreen = const CustomerDashboardScreen();
+          }
+      }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OtpScreen(mobile: mobileController.text),
-      ),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => nextScreen),
+      );
+    } catch (e, st) {
+      debugPrint('Login error: $e\n$st');
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Login failed'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
   }
 
   @override
@@ -164,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       child: TextField(
-                        controller: mobileController,
+                        controller: phoneController,
                         keyboardType: TextInputType.phone,
                         style: const TextStyle(
                           fontSize: 16,
@@ -197,9 +238,78 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
-              // Send OTP Button
+              // Password Card
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Password', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7FA),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                      ),
+                      child: TextField(
+                        controller: passwordController,
+                        obscureText: obscure,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF1A1F36)),
+                        decoration: InputDecoration(
+                          hintText: 'Enter password',
+                          prefixIcon: Container(padding: const EdgeInsets.all(12), child: const Icon(Icons.lock_outline, color: Color(0xFF6366F1), size: 22)),
+                          suffixIcon: IconButton(
+                            icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+                            onPressed: () => setState(() => obscure = !obscure),
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                  ),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Color(0xFF6366F1),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Login Button
               Container(
                 height: 56,
                 decoration: BoxDecoration(
@@ -218,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: loading ? null : sendOtp,
+                  onPressed: loading ? null : login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
@@ -245,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             SizedBox(width: 12),
                             Text(
-                              "Send OTP",
+                              "Login",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -256,40 +366,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
               ),
+              const SizedBox(height: 16),
 
-              const SizedBox(height: 24),
-
-              // Info Text
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
-                    width: 1,
+              // Register Link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                    child: const Text('Register'),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF3B82F6),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "We'll send you a verification code to confirm your number",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ],
           ),

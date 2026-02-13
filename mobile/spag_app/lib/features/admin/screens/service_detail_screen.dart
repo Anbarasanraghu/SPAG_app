@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/service_detail.dart';
 import '../services/service_detail_service.dart';
 import '../services/technician_service_log_service.dart';
+import '../models/service_status_log.dart';
+import '../models/technician_activity_log.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final int serviceId;
@@ -15,6 +17,8 @@ class ServiceDetailScreen extends StatefulWidget {
 class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   bool loading = true;
   ServiceDetail? detail;
+  List<ServiceStatusLog> statusLogs = [];
+  List<TechnicianActivityLog> techLogs = [];
 
   @override
   void initState() {
@@ -30,6 +34,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         detail = data;
         loading = false;
       });
+
+      // Fetch related logs
+      try {
+        final fetchedStatusLogs = await TechnicianServiceLogService.fetchStatusLogsForService(widget.serviceId);
+        final List<TechnicianActivityLog> fetchedTechLogs = [];
+        if (detail != null && detail!.technicianId != null) {
+          final tlogs = await TechnicianServiceLogService.fetchTechnicianActivityLogs(detail!.technicianId!);
+          fetchedTechLogs.addAll(tlogs);
+        }
+
+        setState(() {
+          statusLogs = fetchedStatusLogs;
+          techLogs = fetchedTechLogs;
+        });
+      } catch (e) {
+        // ignore log fetch errors but print for debugging
+        debugPrint('Error fetching related logs: $e');
+      }
     } catch (e) {
       setState(() => loading = false);
       if (context.mounted) {
@@ -53,7 +75,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     }
   }
 
-  bool get canMarkCompleted => detail!.status == "ASSIGNED";
+  bool get canMarkCompleted => detail != null && detail!.status == "ASSIGNED";
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -396,6 +418,92 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         ),
 
                       const SizedBox(height: 20),
+                        // Status Change History
+                        _section(
+                          'Status Change History',
+                          Icons.history, 
+                          const Color(0xFF6366F1),
+                          statusLogs.isEmpty
+                              ? [
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 8),
+                                    child: Text('No status changes recorded.'),
+                                  )
+                                ]
+                              : statusLogs.map((log) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${log.oldStatus ?? '-'} → ${log.newStatus}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'At: ${log.changedAt}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (log.changedBy != null)
+                                          Text('By: ${log.changedBy}'),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                        ),
+
+                        // Technician Activity Logs
+                        if (techLogs.isNotEmpty)
+                          _section(
+                            'Technician Activity',
+                            Icons.engineering_outlined,
+                            const Color(0xFF10B981),
+                            techLogs.map((t) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            t.action,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'At: ${t.createdAt}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (t.serviceId != null) Text('Svc: ${t.serviceId}'),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
                     ],
                   ),
                 ),

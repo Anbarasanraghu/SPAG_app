@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/admin_customer.dart';
 import '../services/admin_customer_service.dart';
+import 'customer_detail_screen.dart';
 
 class AllCustomersScreen extends StatefulWidget {
   const AllCustomersScreen({super.key});
@@ -254,7 +255,14 @@ class _AllCustomersScreenState extends State<AllCustomersScreen> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(16),
                                 onTap: () {
-                                  // Next: Customer Detail Screen
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CustomerDetailScreen(
+                                        customerId: c.customerId,
+                                      ),
+                                    ),
+                                  );
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.all(20),
@@ -365,37 +373,6 @@ class _AllCustomersScreenState extends State<AllCustomersScreen> {
                                                     ),
                                                     maxLines: 1,
                                                     overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 6),
-                                            
-                                            // Installations
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 20,
-                                                  height: 20,
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFF59E0B)
-                                                        .withOpacity(0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(4),
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.build,
-                                                    size: 12,
-                                                    color: Color(0xFFF59E0B),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  "Installations: ${c.installations}",
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey[600],
-                                                    fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
                                               ],
