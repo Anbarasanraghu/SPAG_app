@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class PurifierModelCreate(BaseModel):
     name: str
@@ -10,3 +11,9 @@ class PurifierModelResponse(PurifierModelCreate):
 
     class Config:
         from_attributes = True
+
+class ProductRequestCreate(BaseModel):
+    purifier_model_id: int
+    mobile_number: Optional[str] = None
+    gmail: Optional[str] = None
+    password: Optional[str] = None

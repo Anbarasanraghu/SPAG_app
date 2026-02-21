@@ -15,11 +15,11 @@ class AdminCustomer {
 
   factory AdminCustomer.fromJson(Map<String, dynamic> json) {
     return AdminCustomer(
-      customerId: json['customer_id'],
-      name: json['name'] ?? 'Unknown',
-      phone: json['phone'] ?? '',
-      address: json['address'] ?? '',
-      installations: json['installations'] ?? 0,
+      customerId: (json['customer_id'] as int?) ?? 0,
+      name: (json['name'] as String?) ?? 'Unknown',
+      phone: (json['phone'] as String?) ?? '',
+      address: (json['address'] as String?) ?? '',
+      installations: (json['installations'] as int?) ?? 0,
     );
   }
 }

@@ -193,6 +193,46 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
 
           if (snapshot.hasError) {
             debugPrint('CustomerDashboard FutureBuilder error: ${snapshot.error}');
+            final errorMsg = snapshot.error.toString();
+            if (errorMsg.contains('Installation pending')) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.hourglass_empty,
+                        color: Colors.orange.shade400,
+                        size: 48,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Installation Pending',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Your installation is pending. Please wait for technician.',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/api/dashboard_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../customer/services/customer_profile_service.dart';
 import 'customer_dashboard_screen.dart';
 import 'customer_catalog_screen.dart';
 import 'customer_profile_form_screen.dart';
+import '../../admin/screens/admin_dashboard_screen.dart';
+import '../../technician/screens/technician_home_screen.dart';
 
 class CustomerHomeDeciderScreen extends StatefulWidget {
   const CustomerHomeDeciderScreen({super.key});
@@ -24,6 +27,25 @@ class _CustomerHomeDeciderScreenState
 
   Future<void> _decide() async {
     try {
+      // Check user role first
+      final role = await AuthService.getRole();
+      debugPrint('CustomerHomeDecider: User role = $role');
+      
+      // Admin/technician users should not be here - route them appropriately
+      if (role == 'admin' || role == 'Admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+        );
+        return;
+      } else if (role == 'technician' || role == 'Technician') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TechnicianHomeScreen()),
+        );
+        return;
+      }
+
       /// 🔹 STEP 1: Try to fetch dashboard (best indicator of existing customer)
       debugPrint('CustomerHomeDecider: Attempting to fetch dashboard...');
       

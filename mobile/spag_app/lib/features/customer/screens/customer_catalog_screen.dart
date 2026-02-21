@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/purifier_model.dart';
 import '../../../core/api/purifier_service.dart';
 import '../../auth/services/auth_service.dart';
+import '../../auth/controller/auth_controller.dart';
 import 'customer_home_decider_screen.dart';
 
 class CustomerCatalogScreen extends StatefulWidget {
@@ -36,7 +37,69 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
   Future<void> _request(int id) async {
     setState(() => _requestingId = id);
     try {
-      await PurifierService.requestProduct(id);
+      final token = await AuthService.getToken();
+      if (token == null) {
+        // show minimal request bottom sheet for anonymous
+        final result = await showModalBottomSheet<Map<String, String>?>(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) {
+            final phoneCtrl = TextEditingController();
+            final emailCtrl = TextEditingController();
+            final passCtrl = TextEditingController();
+            bool loading = false;
+
+            return StatefulBuilder(builder: (context, setState) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Request Product', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Mobile Number')),
+                      TextField(controller: emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Gmail')),
+                      TextField(controller: passCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Password')),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: loading
+                              ? null
+                              : () async {
+                                  if (phoneCtrl.text.trim().isEmpty || emailCtrl.text.trim().isEmpty || passCtrl.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All fields required')));
+                                    return;
+                                  }
+                                  setState(() => loading = true);
+                                  try {
+                                    await PurifierService.requestProduct(id, mobile: phoneCtrl.text.trim(), gmail: emailCtrl.text.trim(), password: passCtrl.text);
+                                    Navigator.pop(context, {'success': 'true'});
+                                  } catch (e) {
+                                    setState(() => loading = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Request error: $e')));
+                                  }
+                                },
+                          child: loading ? const CircularProgressIndicator() : const Text('Submit Request'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            });
+          },
+        );
+
+        if (result?['success'] != 'true') {
+          return;
+        }
+      } else {
+        // authenticated request
+        await PurifierService.requestProduct(id);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -17,11 +17,11 @@ class TechnicianService {
 
   factory TechnicianService.fromJson(Map<String, dynamic> json) {
     return TechnicianService(
-      serviceId: json['id'] ?? json['service_id'],
-      customerId: json['customer_id'],
-      installationId: json['installation_id'],
-      serviceNumber: json['service_number'],
-      serviceDate: json['service_date'].toString(),
+      serviceId: (json['id'] ?? json['service_id'] as int?) ?? 0,
+      customerId: (json['customer_id'] as int?) ?? 0,
+      installationId: (json['installation_id'] as int?) ?? 0,
+      serviceNumber: (json['service_number'] as int?) ?? 0,
+      serviceDate: (json['service_date'] as String?) ?? '',
       status: json['status'],
     );
   }

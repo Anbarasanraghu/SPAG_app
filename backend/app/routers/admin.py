@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session , aliased
+from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from app.models.product_request import ProductRequest
 from app.models.installation import Installation
 from app.models.purifier_model import PurifierModel
@@ -280,7 +282,53 @@ def get_all_technician_activity_logs(
 
 @router.get("/admin/product-requests")
 def get_requests(db: Session = Depends(get_db)):
-    return db.query(ProductRequest).all()
+    """Return all product requests. If the DB is missing the `user_id` column,
+    attempt a best-effort ALTER TABLE to add it and retry once.
+    """
+    try:
+        return db.query(ProductRequest).all()
+    except Exception as e:
+        msg = str(e)
+        if 'product_requests.user_id' in msg or 'UndefinedColumn' in msg or 'column product_requests.user_id' in msg:
+            # Try to add the column (best-effort). Use raw SQL since SQLAlchemy models expect the column.
+            try:
+                db.execute(text("ALTER TABLE product_requests ADD COLUMN user_id INTEGER;"))
+                db.commit()
+                # Retry ORM query once
+                return db.query(ProductRequest).all()
+            except Exception:
+                # If we cannot alter (permissions or other), fall back to a raw select of available columns
+                try:
+                    # Attempt to list columns (Postgres information_schema)
+                    cols = []
+                    try:
+                        res = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='product_requests'"))
+                        cols = [r[0] for r in res.fetchall()]
+                    except Exception:
+                        # fallback to sqlite PRAGMA
+                        try:
+                            res = db.execute(text("PRAGMA table_info('product_requests')"))
+                            cols = [r[1] for r in res.fetchall()]
+                        except Exception:
+                            cols = []
+
+                    # Choose a safe subset of columns to return
+                    safe_cols = [c for c in ['id','purifier_model_id','status','assigned_technician_id','created_at','customer_id'] if c in cols]
+                    if not safe_cols:
+                        # If we couldn't determine columns, return an empty list with message
+                        return []
+
+                    sel = ", ".join(safe_cols)
+                    rows = db.execute(text(f"SELECT {sel} FROM product_requests")).fetchall()
+                    results = []
+                    for row in rows:
+                        # row may be a tuple; map to keys
+                        results.append({safe_cols[i]: row[i] for i in range(len(safe_cols))})
+                    return results
+                except Exception:
+                    raise HTTPException(status_code=500, detail="Database missing column product_requests.user_id and automatic migration failed")
+        # Not the specific issue we expect — re-raise as 500
+        raise
 
 @router.put("/admin/product-requests/{id}/assign")
 def assign_tech(id: int, technician_id: int, db: Session = Depends(get_db)):

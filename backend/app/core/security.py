@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from fastapi.security import HTTPBearer, OAuth2PasswordBearer, HTTPAuthorizationCredentials
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 import jwt
 from passlib.context import CryptContext
+from typing import Optional
 
 
 security = HTTPBearer()
@@ -17,7 +18,7 @@ def create_access_token(data: dict):
 
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def hash_password(password: str):
     return pwd_context.hash(password)
@@ -45,6 +46,20 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
         )
+
+def get_optional_current_user(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return None
+    token = parts[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.PyJWTError:
+        return None
     
 def require_admin(user=Depends(get_current_user)):
     if user["role"] != "admin":

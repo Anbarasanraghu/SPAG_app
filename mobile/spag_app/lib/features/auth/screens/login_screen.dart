@@ -3,9 +3,9 @@ import '../controller/auth_controller.dart';
 import '../../auth/services/auth_service.dart';
 import '../../customer/screens/customer_profile_form_screen.dart';
 import '../../customer/screens/customer_dashboard_screen.dart';
+import '../../customer/screens/customer_main_screen.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../technician/screens/technician_home_screen.dart';
-import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -27,33 +27,69 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final resp = await authController.login(phoneController.text.trim(), passwordController.text);
 
+      debugPrint('Login response: token=${resp.token.substring(0,10)}..., role=${resp.role}, profileExists=${resp.profileExists}');
+
       await AuthService.saveToken(resp.token);
       await AuthService.saveRole(resp.role);
 
       if (!mounted) return;
 
-      // Route based on role
+      // Route based on role - but since app opens to catalog, just return auth data
+      // Widget nextScreen;
+      // switch (resp.role) {
+      //   case 'admin':
+      //     nextScreen = const AdminDashboardScreen();
+      //     break;
+      //   case 'technician':
+      //     nextScreen = const TechnicianHomeScreen();
+      //     break;
+      //   case 'customer':
+      //   default:
+      //     if (!resp.profileExists) {
+      //       nextScreen = const CustomerProfileFormScreen();
+      //     } else {
+      //       nextScreen = const CustomerDashboardScreen();
+      //     }
+      // }
+
+      // Actually, let's route based on role after login
+      debugPrint('[LoginScreen] Routing based on role: ${resp.role}');
       Widget nextScreen;
       switch (resp.role) {
         case 'admin':
+        case 'Admin':
+          debugPrint('[LoginScreen] Routing to AdminDashboardScreen');
           nextScreen = const AdminDashboardScreen();
           break;
         case 'technician':
+        case 'Technician':
+          debugPrint('[LoginScreen] Routing to TechnicianHomeScreen');
           nextScreen = const TechnicianHomeScreen();
           break;
         case 'customer':
+        case 'Customer':
         default:
           if (!resp.profileExists) {
+            debugPrint('[LoginScreen] Routing to CustomerProfileFormScreen');
             nextScreen = const CustomerProfileFormScreen();
           } else {
-            nextScreen = const CustomerDashboardScreen();
+            debugPrint('[LoginScreen] Routing to CustomerMainScreen');
+            nextScreen = CustomerMainScreen(); // Go to catalog for customers
           }
       }
 
+      if (!mounted) {
+        debugPrint('[LoginScreen] Widget not mounted, skipping navigation');
+        return;
+      }
+      debugPrint('[LoginScreen] Navigating to ${nextScreen.runtimeType}');
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => nextScreen),
+        MaterialPageRoute(builder: (context) => nextScreen),
       );
+
+      // Instead, pop with auth response to let caller handle
+      Navigator.pop(context, resp);
     } catch (e, st) {
       debugPrint('Login error: $e\n$st');
       if (!mounted) return;
@@ -368,17 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Register Link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account? "),
-                  TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                    child: const Text('Register'),
-                  ),
-                ],
-              ),
+              // Register UI removed: minimal signup occurs from Catalog request flow
             ],
           ),
         ),

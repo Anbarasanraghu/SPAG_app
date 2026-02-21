@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.database import SessionLocal
 from app.models.customer import Customer
+from app.models.user import User
 from app.models.installation import Installation
 from app.models.purifier_model import PurifierModel
 from app.models.service_history import ServiceHistory
@@ -73,7 +74,7 @@ def get_customer_dashboard_by_id(
 
 
 # 🔹 AUTHENTICATED CUSTOMER DASHBOARD
-@router.get("/customer", response_model=CustomerDashboardResponse)
+@router.get("/customer")
 def get_customer_dashboard(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
@@ -85,6 +86,14 @@ def get_customer_dashboard(
         or user.get("sub")
     )
 
+    auth_user = db.query(User).filter(User.id == user_id).first()
+    if not auth_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not getattr(auth_user, "profile_completed", False):
+        return {"profile_completed": False, "message": "Installation pending"}
+
+    # profile completed -> return full dashboard
     customer = db.query(Customer).filter(
         Customer.user_id == user_id
     ).first()

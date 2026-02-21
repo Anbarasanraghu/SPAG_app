@@ -19,11 +19,11 @@ class PendingService {
 
   factory PendingService.fromJson(Map<String, dynamic> json) {
     return PendingService(
-      serviceId: json['service_id'],
-      serviceDate: json['service_date'],
-      serviceNumber: json['service_number'],
-      status: json['status'],
-      customerName: json['customer_name'] ?? "Unknown",
+      serviceId: (json['service_id'] as int?) ?? 0,
+      serviceDate: (json['service_date'] as String?) ?? '',
+      serviceNumber: (json['service_number'] as int?) ?? 0,
+      status: (json['status'] as String?) ?? '',
+      customerName: (json['customer_name'] as String?) ?? "Unknown",
       technicianId: json['technician_id'],
       technicianName: json['technician_name'],
     );

@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
+from types import SimpleNamespace
 from pydantic import BaseModel
 
 import random
@@ -20,6 +23,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 class RegisterRequest(BaseModel):
     name: str
     phone: str
+    email: str
     password: str
 
 
@@ -46,8 +50,10 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     user = User(
         name=data.name,
         phone=data.phone,
+        email=data.email,
         password_hash=hash_password(data.password),
-        role="customer"
+        role="customer",
+        profile_completed=False
     )
 
     db.add(user)
@@ -59,8 +65,22 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
-
-    user = db.query(User).filter(User.phone == data.phone).first()
+    try:
+        user = db.query(User).filter(User.phone == data.phone).first()
+    except ProgrammingError:
+        # ORM query failed due to missing columns; rollback the session and run a minimal raw query
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        # fallback: DB may be missing newly-added columns (email/profile_completed).
+        # Query minimal columns directly and construct a lightweight object.
+        res = db.execute(text("SELECT id, name, phone, password_hash, role, NULL as profile_completed FROM users WHERE phone = :phone LIMIT 1"), {"phone": data.phone})
+        row = res.fetchone()
+        if row:
+            user = SimpleNamespace(id=row[0], name=row[1], phone=row[2], password_hash=row[3], role=row[4], profile_completed=False)
+        else:
+            user = None
 
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Invalid credentials")
@@ -71,15 +91,11 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         "role": user.role
     })
 
-    # 🔥 CHECK PROFILE
-    profile = db.query(Customer)\
-        .filter(Customer.user_id == user.id)\
-        .first()
-
+    # 🔥 CHECK PROFILE (use profile_completed flag)
     return {
         "token": token,
         "role": user.role,
-        "profile_exists": profile is not None
+        "profile_exists": bool(getattr(user, "profile_completed", False))
     }
 
 

@@ -5,6 +5,7 @@ from app.database import get_db
 from app.schemas.customer_profile import CustomerProfileCreate
 from app.models.customer import Customer
 from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/customer/profile", tags=["Customer Profile"])
 
@@ -22,11 +23,11 @@ def profile_exists(
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid user token")
 
-    customer = db.query(Customer).filter(
-        Customer.user_id == user_id
-    ).first()
+    auth_user = db.query(User).filter(User.id == user_id).first()
+    if not auth_user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    return {"exists": customer is not None}
+    return {"exists": bool(getattr(auth_user, "profile_completed", False))}
 
 @router.post("")
 def create_profile(

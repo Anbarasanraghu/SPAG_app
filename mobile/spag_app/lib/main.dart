@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/customer/screens/customer_catalog_screen.dart';
+import 'features/customer/screens/customer_main_screen.dart';
 import 'features/customer/screens/customer_dashboard_screen.dart';
 import 'features/customer/screens/customer_profile_form_screen.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/technician/screens/technician_home_screen.dart';
 
-class StartupScreen extends StatelessWidget {
-  const StartupScreen({super.key});
+class AuthCheckScreen extends StatelessWidget {
+  const AuthCheckScreen({super.key});
 
   Future<(bool, String?)> _checkAuth() async {
     final token = await AuthService.getToken();
@@ -27,20 +28,42 @@ class StartupScreen extends StatelessWidget {
 
         final (hasToken, role) = snapshot.data ?? (false, null);
 
-        if (!hasToken) {
-          return const LoginScreen();
+        // Always start with catalog, but route authenticated users to their dashboards
+        if (hasToken && role != null) {
+          debugPrint('[AuthCheckScreen] User authenticated with role: $role');
+          switch (role) {
+            case 'admin':
+            case 'Admin':
+              debugPrint('[AuthCheckScreen] Routing admin to AdminDashboardScreen');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+                );
+              });
+              break;
+            case 'technician':
+            case 'Technician':
+              debugPrint('[AuthCheckScreen] Routing technician to TechnicianHomeScreen');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TechnicianHomeScreen()),
+                );
+              });
+              break;
+            case 'customer':
+            case 'Customer':
+            default:
+              debugPrint('[AuthCheckScreen] Customer staying on catalog');
+              break;
+          }
+        } else {
+          debugPrint('[AuthCheckScreen] No authentication, showing catalog');
         }
 
-        // Route based on role
-        switch (role) {
-          case 'admin':
-            return const AdminDashboardScreen();
-          case 'technician':
-            return const TechnicianHomeScreen();
-          case 'customer':
-          default:
-            return const CustomerDashboardScreen();
-        }
+        // Default to catalog for everyone
+        return CustomerMainScreen();
       },
     );
   }
@@ -77,7 +100,7 @@ class SpagApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const StartupScreen(),
+      home: const AuthCheckScreen(),
       routes: {
         '/purifier-catalog': (context) => const CustomerCatalogScreen(),
         '/customer-dashboard': (context) => const CustomerDashboardScreen(),
