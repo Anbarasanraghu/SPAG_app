@@ -26,6 +26,7 @@ class CustomerDashboard {
   final String installDate;
   final String? nextServiceDate;
   final List<ServiceItem> services;
+  final bool profileCompleted;
 
   CustomerDashboard({
     required this.customerId,
@@ -33,6 +34,7 @@ class CustomerDashboard {
     required this.installDate,
     this.nextServiceDate,
     required this.services,
+    this.profileCompleted = true,
   });
 
   factory CustomerDashboard.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,7 @@ class CustomerDashboard {
             installDate: '',
             nextServiceDate: (json['next_service_date'] ?? json['nextServiceDate'])?.toString(),
             services: servicesList.map((e) => ServiceItem.fromJson(e as Map<String, dynamic>)).toList(),
+            profileCompleted: (json['profile_completed'] ?? true) as bool,
           );
         } else {
           final inst = (installations.first ?? {}) as Map<String, dynamic>;
@@ -72,6 +75,7 @@ class CustomerDashboard {
             installDate: (inst['install_date'] ?? inst['installDate'] ?? '')?.toString() ?? '',
             nextServiceDate: (json['next_service_date'] ?? json['nextServiceDate'])?.toString(),
             services: servicesList.map((e) => ServiceItem.fromJson(e as Map<String, dynamic>)).toList(),
+            profileCompleted: (json['profile_completed'] ?? true) as bool,
           );
         }
       }
@@ -97,6 +101,7 @@ class CustomerDashboard {
           debugPrint('  Service: #${item.serviceNumber} - ${item.serviceDate} (${item.status})');
           return item;
         }).toList(),
+        profileCompleted: (json['profile_completed'] ?? true) as bool,
       );
       
       debugPrint('========== DASHBOARD PARSING END ==========');

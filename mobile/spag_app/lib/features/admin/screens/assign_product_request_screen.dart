@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
 
+// ─── COLOUR TOKENS (exact web UI) ────────────────────────
+// bg:#F5F9FF  panel:#FFFFFF  surface:#EAF3FF
+// accent:#2A8FD4  mid:#5AABDE  soft:#C4DFF5
+// text:#0D2A3F  muted:#6B8FA8  hairline:#D6E8F5
+
 class AssignProductRequestScreen extends StatefulWidget {
   final int requestId;
-
-  const AssignProductRequestScreen({
-    super.key,
-    required this.requestId,
-  });
+  const AssignProductRequestScreen({super.key, required this.requestId});
 
   @override
   State<AssignProductRequestScreen> createState() =>
@@ -18,6 +19,15 @@ class _AssignProductRequestScreenState
     extends State<AssignProductRequestScreen> {
   final _technicianIdController = TextEditingController();
   bool _isAssigning = false;
+
+  static const _bg       = Color(0xFFF5F9FF);
+  static const _panel    = Color(0xFFFFFFFF);
+  static const _surface  = Color(0xFFEAF3FF);
+  static const _accent   = Color(0xFF2A8FD4);
+  static const _soft     = Color(0xFFC4DFF5);
+  static const _text     = Color(0xFF0D2A3F);
+  static const _muted    = Color(0xFF6B8FA8);
+  static const _hairline = Color(0xFFD6E8F5);
 
   @override
   void dispose() {
@@ -31,18 +41,16 @@ class _AssignProductRequestScreenState
     if (techId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(child: Text('Please enter a technician ID')),
-            ],
-          ),
-          backgroundColor: const Color(0xFFF59E0B),
+          content: const Row(children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.white, size: 14),
+            SizedBox(width: 8),
+            Expanded(child: Text('Please enter a technician ID',
+                style: TextStyle(fontSize: 12, fontFamily: 'monospace'))),
+          ]),
+          backgroundColor: const Color(0xFFD4842A),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+          margin: const EdgeInsets.all(12),
         ),
       );
       return;
@@ -60,347 +68,328 @@ class _AssignProductRequestScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(child: Text('Technician assigned successfully ✅')),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981),
+          content: const Row(children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 14),
+            SizedBox(width: 8),
+            Expanded(child: Text('Technician assigned successfully',
+                style: TextStyle(fontSize: 12, fontFamily: 'monospace'))),
+          ]),
+          backgroundColor: const Color(0xFF2A9D6B),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+          margin: const EdgeInsets.all(12),
         ),
       );
 
       await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-
-      final raw = e.toString();
-      final message = raw.replaceFirst('Exception: ', '');
-
+      final message = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text('Failed to assign technician ❌: $message')),
-            ],
-          ),
-          backgroundColor: const Color(0xFFEF4444),
+          content: Row(children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 14),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Failed: $message',
+                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'))),
+          ]),
+          backgroundColor: const Color(0xFFE05A5A),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+          margin: const EdgeInsets.all(12),
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isAssigning = false);
-      }
+      if (mounted) setState(() => _isAssigning = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: _bg,
+
+      // ── App Bar ───────────────────────────────────────────
       appBar: AppBar(
-        title: const Text(
-          'Assign Technician',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
+        backgroundColor: _bg,
+        surfaceTintColor: _bg,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1F36),
+        foregroundColor: _text,
+        titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 14, color: _text),
           onPressed: () => Navigator.pop(context),
         ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text('ADMIN PANEL',
+                style: TextStyle(
+                  fontSize: 7, fontWeight: FontWeight.w700,
+                  color: _muted, letterSpacing: 2.2, fontFamily: 'monospace',
+                )),
+            Text('Assign Technician',
+                style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w700,
+                  color: _text, letterSpacing: -0.2,
+                )),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _hairline),
+        ),
       ),
+
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Request Info Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFEC4899), Color(0xFFDB2777)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // ── Request ID hero banner ──────────────────────
+            // mirrors ShowcaseCard image panel + stats layout
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2A8FD4), Color(0xFF1A6BA8)],
+                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(13),
+                boxShadow: [
+                  BoxShadow(
+                    color: _accent.withOpacity(0.16),
+                    blurRadius: 14, offset: const Offset(0, 5),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEC4899).withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.assignment_turned_in,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Product Request',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '#${widget.requestId}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-
-              const SizedBox(height: 32),
-
-              // Instruction Text
-              Row(
+              child: Row(
                 children: [
+                  // Icon box — mirrors admin tile icon style
                   Container(
-                    width: 4,
-                    height: 24,
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEC4899),
-                      borderRadius: BorderRadius.circular(2),
+                      color: Colors.white.withOpacity(0.13),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withOpacity(0.16)),
+                    ),
+                    child: const Icon(
+                      Icons.assignment_turned_in_rounded,
+                      color: Colors.white, size: 22,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Technician Assignment',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1F36),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Eyebrow — mirrors "PURIFICATION SYSTEM" label
+                      const Text('PRODUCT REQUEST',
+                          style: TextStyle(
+                            fontSize: 7, fontWeight: FontWeight.w700,
+                            color: Colors.white60, letterSpacing: 2.4,
+                            fontFamily: 'monospace',
+                          )),
+                      const SizedBox(height: 3),
+                      Text('#${widget.requestId}',
+                          style: const TextStyle(
+                            fontSize: 26, fontWeight: FontWeight.w700,
+                            color: Colors.white, letterSpacing: -1.0,
+                          )),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Status pill — mirrors web stats "Grade / Pro" chip
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(7),
+                      border: Border.all(color: Colors.white.withOpacity(0.18)),
+                    ),
+                    child: const Text('OPEN',
+                        style: TextStyle(
+                          fontSize: 7, fontWeight: FontWeight.w700,
+                          color: Colors.white, letterSpacing: 1.8,
+                          fontFamily: 'monospace',
+                        )),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Section eyebrow ─────────────────────────────
+            const Text('TECHNICIAN ASSIGNMENT',
+                style: TextStyle(
+                  fontSize: 7, fontWeight: FontWeight.w700,
+                  color: _muted, letterSpacing: 2.4, fontFamily: 'monospace',
+                )),
+            const SizedBox(height: 4),
+            const Text(
+              'Enter the technician ID to assign them to this request',
+              style: TextStyle(
+                fontSize: 11, color: _muted,
+                fontFamily: 'monospace', height: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Input card ──────────────────────────────────
+            // mirrors LoginScreen input card style
+            Container(
+              decoration: BoxDecoration(
+                color: _panel,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: _hairline),
+                boxShadow: [
+                  BoxShadow(
+                    color: _accent.withOpacity(0.04),
+                    blurRadius: 8, offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Field label row — mirrors LoginScreen "MOBILE NUMBER"
+                  Row(children: [
+                    Container(
+                      width: 30, height: 30,
+                      decoration: BoxDecoration(
+                        color: _surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _soft),
+                      ),
+                      child: const Icon(
+                        Icons.person_outline_rounded,
+                        color: _accent, size: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    const Text('TECHNICIAN ID',
+                        style: TextStyle(
+                          fontSize: 8, fontWeight: FontWeight.w700,
+                          color: _muted, letterSpacing: 1.8,
+                          fontFamily: 'monospace',
+                        )),
+                  ]),
+                  const SizedBox(height: 9),
+
+                  // Text field — mirrors _AquaTextField / _AquaField style
+                  TextField(
+                    controller: _technicianIdController,
+                    keyboardType: TextInputType.number,
+                    enabled: !_isAssigning,
+                    style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: _text,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Enter technician ID (e.g. 12345)',
+                      hintStyle: const TextStyle(
+                        fontSize: 11, color: _muted, fontFamily: 'monospace',
+                      ),
+                      filled: true,
+                      fillColor: _surface,
+                      prefixIcon: const Icon(
+                        Icons.badge_outlined, color: _accent, size: 16,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: _hairline),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF5AABDE), width: 1.5,
+                        ),
+                      ),
+                      disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: _hairline),
+                      ),
+                      border: InputBorder.none,
                     ),
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
-              const Text(
-                'Enter the technician ID to assign them to this product request',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  height: 1.5,
-                ),
+            // ── Info hint box ───────────────────────────────
+            // mirrors ProfileTab hint row / LoginScreen hint box
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              decoration: BoxDecoration(
+                color: _surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _hairline),
               ),
-
-              const SizedBox(height: 24),
-
-              // Input Card
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              child: const Row(children: [
+                Icon(Icons.info_outline_rounded, size: 12, color: _muted),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Make sure the technician ID is valid before assigning',
+                    style: TextStyle(
+                      fontSize: 10, color: _muted,
+                      fontFamily: 'monospace', letterSpacing: 0.2, height: 1.4,
                     ),
-                  ],
+                  ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              ]),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Assign button ───────────────────────────────
+            // mirrors catalog / login CTA button style
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: _isAssigning ? null : _assignTechnician,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accent,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: _soft,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isAssigning
+                    ? const SizedBox(
+                        height: 18, width: 18,
+                        child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: Color(0xFF6366F1),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Technician ID',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1F36),
-                            ),
-                          ),
+                          Icon(Icons.person_add_rounded, size: 15),
+                          SizedBox(width: 8),
+                          Text('ASSIGN TECHNICIAN',
+                              style: TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.w700,
+                                letterSpacing: 1.8, fontFamily: 'monospace',
+                              )),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _technicianIdController,
-                        keyboardType: TextInputType.number,
-                        enabled: !_isAssigning,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1F36),
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter technician ID (e.g., 12345)',
-                          hintStyle: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                            fontWeight: FontWeight.normal,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFF5F7FA),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF6366F1),
-                              width: 2,
-                            ),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.badge_outlined,
-                            color: Color(0xFF6366F1),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Assign Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isAssigning ? null : _assignTechnician,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEC4899),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[300],
-                    elevation: 0,
-                    shadowColor: const Color(0xFFEC4899).withOpacity(0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: _isAssigning
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.person_add, size: 22),
-                            SizedBox(width: 12),
-                            Text(
-                              'Assign Technician',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Info Box
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF3B82F6),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Make sure the technician ID is valid before assigning',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: const Color(0xFF3B82F6).withOpacity(0.9),
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

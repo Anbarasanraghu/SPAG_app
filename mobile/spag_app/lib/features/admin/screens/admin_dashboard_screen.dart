@@ -6,44 +6,81 @@ import 'service_status_logs_screen.dart';
 import 'technician_activity_logs_screen.dart';
 import 'all_customers_screen.dart';
 
+// ─── COLOUR TOKENS ───────────────────────────────────────
+// bg: #F5F9FF  panels: #FFFFFF  surface: #EAF3FF
+// accent: #2A8FD4  mid: #5AABDE  soft: #C4DFF5
+// text: #0D2A3F  muted: #6B8FA8  hairline: #D6E8F5
+
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
+
+  static const Color _bg       = Color(0xFFF5F9FF);
+  static const Color _panel    = Color(0xFFFFFFFF);
+  static const Color _surface  = Color(0xFFEAF3FF);
+  static const Color _accent   = Color(0xFF2A8FD4);
+  static const Color _text     = Color(0xFF0D2A3F);
+  static const Color _muted    = Color(0xFF6B8FA8);
+  static const Color _hairline = Color(0xFFD6E8F5);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: _bg,
       appBar: AppBar(
-        title: const Text(
-          "Admin Dashboard",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
+        surfaceTintColor: _bg,
+        backgroundColor: _bg,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1F36),
+        foregroundColor: _text,
         centerTitle: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text(
+              'ADMIN PANEL',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: _muted,
+                letterSpacing: 2.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            SizedBox(height: 1),
+            Text(
+              'Dashboard',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: _text,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _hairline),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
         children: [
-          // Welcome Section
+
+          // ── Hero banner ────────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                colors: [_accent, Color(0xFF1A6BA8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  color: _accent.withOpacity(0.20),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -54,132 +91,129 @@ class AdminDashboardScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Welcome Back!",
+                        'CONTROL CENTER',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.white70,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2.0,
+                          fontFamily: 'monospace',
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Manage your business efficiently",
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Welcome Back!',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Manage your business efficiently',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.75),
+                          fontSize: 11,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.admin_panel_settings,
-                    color: Colors.white,
-                    size: 40,
-                  ),
+                  child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 28),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          
-          // Dashboard Options Grid
-          _adminTile(
-            context,
-            title: "Manage Users & Roles",
-            subtitle: "Control user access and permissions",
-            icon: Icons.people_outline,
-            color: const Color(0xFF10B981),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ManageUsersScreen(),
-                ),
-              );
-            },
+
+          const SizedBox(height: 16),
+
+          // ── Section label ──────────────────────────────────
+          const Text(
+            'QUICK ACCESS',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: _muted,
+              letterSpacing: 2.2,
+              fontFamily: 'monospace',
+            ),
           ),
-          
+          const SizedBox(height: 10),
+
+          // ── Tiles ──────────────────────────────────────────
           _adminTile(
             context,
-            title: "Service Status Logs",
-            subtitle: "View status change history for all services",
-            icon: Icons.history_toggle_off,
-            color: const Color(0xFF2563EB),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ServiceStatusLogsScreen(),
-                ),
-              );
-            },
+            title: 'Manage Users & Roles',
+            subtitle: 'Control user access and permissions',
+            icon: Icons.people_outline_rounded,
+            color: const Color(0xFF2A9D6B),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
+            ),
           ),
           _adminTile(
             context,
-            title: "Technician Activity Logs",
-            subtitle: "View actions performed by all technicians",
-            icon: Icons.timeline,
-            color: const Color(0xFF06B6D4),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const TechnicianActivityLogsScreen(),
-                ),
-              );
-            },
+            title: 'Service Status Logs',
+            subtitle: 'View status change history for all services',
+            icon: Icons.history_toggle_off_rounded,
+            color: _accent,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ServiceStatusLogsScreen()),
+            ),
           ),
           _adminTile(
             context,
-            title: "Pending Services",
-            subtitle: "Review and manage pending tasks",
+            title: 'Technician Activity Logs',
+            subtitle: 'View actions performed by all technicians',
+            icon: Icons.timeline_rounded,
+            color: const Color(0xFF5AABDE),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TechnicianActivityLogsScreen()),
+            ),
+          ),
+          _adminTile(
+            context,
+            title: 'Pending Services',
+            subtitle: 'Review and manage pending tasks',
             icon: Icons.pending_actions_outlined,
-            color: const Color(0xFFF59E0B),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PendingServicesScreen(),
-                ),
-              );
-            },
+            color: const Color(0xFFD4842A),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PendingServicesScreen()),
+            ),
           ),
           _adminTile(
             context,
-            title: "All Customers",
-            subtitle: "View and manage customer data",
+            title: 'All Customers',
+            subtitle: 'View and manage customer data',
             icon: Icons.groups_outlined,
-            color: const Color(0xFF8B5CF6),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AllCustomersScreen(),
-                ),
-              );
-            },
+            color: const Color(0xFF7A6FD4),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AllCustomersScreen()),
+            ),
           ),
           _adminTile(
             context,
-            title: "Product Requests",
-            subtitle: "Handle customer product requests",
+            title: 'Product Requests',
+            subtitle: 'Handle customer product requests',
             icon: Icons.inventory_2_outlined,
-            color: const Color(0xFFEC4899),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ProductRequestsScreen(),
-                ),
-              );
-            },
+            color: const Color(0xFFD45A8A),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProductRequestsScreen()),
+            ),
           ),
         ],
       ),
@@ -195,15 +229,16 @@ class AdminDashboardScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: _panel,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _hairline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: _accent.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -211,25 +246,26 @@ class AdminDashboardScreen extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
+          splashColor: color.withOpacity(0.06),
+          highlightColor: color.withOpacity(0.04),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
+                // Icon box
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: color.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 28,
-                  ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
+
+                // Text
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,34 +273,35 @@ class AdminDashboardScreen extends StatelessWidget {
                       Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1F36),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _text,
+                          letterSpacing: -0.1,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: _muted,
+                          fontFamily: 'monospace',
+                          letterSpacing: 0.1,
                         ),
                       ),
                     ],
                   ),
                 ),
+
+                // Arrow
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 26,
+                  height: 26,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    shape: BoxShape.circle,
+                    color: color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(7),
                   ),
-                  child: Icon(
-                    Icons.arrow_forward_ios,
-                    color: color,
-                    size: 14,
-                  ),
+                  child: Icon(Icons.arrow_forward_ios_rounded, color: color, size: 11),
                 ),
               ],
             ),

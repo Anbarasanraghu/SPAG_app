@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/installation_service.dart';
 import '../models/installation_job.dart';
+import '../../../core/api/purifier_service.dart';
+import '../../../core/models/purifier_model.dart';
 
 class InstallationJobsScreen extends StatefulWidget {
   const InstallationJobsScreen({super.key});
@@ -204,6 +206,24 @@ class _InstallationJobsScreenState
                                 ],
                               ),
                             ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(job.status).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                job.status.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: _getStatusColor(job.status),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -296,85 +316,156 @@ class _InstallationJobsScreenState
     );
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'ASSIGNED':
+        return const Color(0xFF3B82F6);
+      case 'IN_PROGRESS':
+      case 'IN PROGRESS':
+        return const Color(0xFFF59E0B);
+      case 'COMPLETED':
+        return const Color(0xFF10B981);
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
   Future<void> _completeInstallation(InstallationJob job) async {
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
+    // Fetch purifier models first
+    List<PurifierModel> models = [];
+    try {
+      models = await PurifierService.listModels();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load purifier models: $e')),
+      );
+      return;
+    }
+
+    final customerCtrl = TextEditingController(text: job.customerName);
+    final addressCtrl = TextEditingController(text: job.address);
+    final address2Ctrl = TextEditingController();
+    final siteDetailsCtrl = TextEditingController(text: job.address);
+    final cityCtrl = TextEditingController();
+    final stateCtrl = TextEditingController();
+    final pincodeCtrl = TextEditingController();
+    final landmarkCtrl = TextEditingController();
+    DateTime installationDate = DateTime.now();
+    int selectedModelId = job.purifierModelId != 0 ? job.purifierModelId : (models.isNotEmpty ? models[0].id : 0);
+
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => Dialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_outline,
-                  color: Color(0xFF10B981),
-                  size: 48,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Complete Installation?',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Mark installation for ${job.customerName} as complete?',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Complete Installation'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
+                  TextField(
+                    controller: customerCtrl,
+                    decoration: const InputDecoration(labelText: 'Customer Name'),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: const Color(0xFF10B981),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: addressCtrl,
+                    decoration: const InputDecoration(labelText: 'Address'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: address2Ctrl,
+                    decoration: const InputDecoration(labelText: 'Address Line 2'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: cityCtrl,
+                    decoration: const InputDecoration(labelText: 'City'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: stateCtrl,
+                    decoration: const InputDecoration(labelText: 'State'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: pincodeCtrl,
+                    decoration: const InputDecoration(labelText: 'Pincode'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: landmarkCtrl,
+                    decoration: const InputDecoration(labelText: 'Landmark'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: siteDetailsCtrl,
+                    decoration: const InputDecoration(labelText: 'Site Details'),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            final d = await showDatePicker(
+                              context: context,
+                              initialDate: installationDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2100),
+                            );
+                            if (d != null) setState(() => installationDate = d);
+                          },
+                          child: Text('Date: ${installationDate.toIso8601String().split('T')[0]}'),
                         ),
                       ),
-                      child: const Text('Confirm'),
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: selectedModelId,
+                    items: models.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
+                    onChanged: (v) => setState(() => selectedModelId = v ?? selectedModelId),
+                    decoration: const InputDecoration(labelText: 'Purifier Model'),
                   ),
                 ],
               ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  final payload = {
+                    'customer_name': customerCtrl.text.trim(),
+                    'address': addressCtrl.text.trim(),
+                    'installation_date': installationDate.toIso8601String().split('T')[0],
+                    'site_details': siteDetailsCtrl.text.trim(),
+                    'purifier_model_id': selectedModelId,
+                    'address_line2': address2Ctrl.text.trim(),
+                    'city': cityCtrl.text.trim(),
+                    'state': stateCtrl.text.trim(),
+                    'pincode': pincodeCtrl.text.trim(),
+                    'landmark': landmarkCtrl.text.trim(),
+                  };
+
+                  // Basic validation (cast to String to avoid dynamic type issues)
+                  if ((payload['customer_name'] ?? '').toString().isEmpty || (payload['address'] ?? '').toString().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill required fields')));
+                    return;
+                  }
+
+                  Navigator.pop(context, payload);
+                },
+                child: const Text('Submit'),
+              ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
 
-    if (confirmed != true) return;
+    if (result == null) return;
 
     if (!mounted) return;
 
@@ -400,7 +491,7 @@ class _InstallationJobsScreenState
     );
 
     try {
-      await InstallationService.completeInstallation(job.requestId);
+      await InstallationService.completeInstallation(job, result);
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog

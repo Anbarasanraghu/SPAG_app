@@ -49,61 +49,17 @@ class _CustomerHomeDeciderScreenState
       /// 🔹 STEP 1: Try to fetch dashboard (best indicator of existing customer)
       debugPrint('CustomerHomeDecider: Attempting to fetch dashboard...');
       
-      try {
-        final dashboard = await DashboardService.fetchDashboard();
-
-        if (!mounted) return;
-
-        debugPrint('CustomerHomeDecider: Dashboard fetched successfully');
-        debugPrint(
-            'CustomerHomeDecider: customerId=${dashboard.customerId}, purifierModel=${dashboard.purifierModel}, installDate=${dashboard.installDate}');
-
-        /// 🔹 STEP 2: Decide by installation
-        if ((dashboard.purifierModel.isEmpty &&
-                dashboard.installDate.isEmpty) ||
-            dashboard.customerId == 0) {
-          // EXISTING CUSTOMER but NO INSTALLATION → CATALOG
-          debugPrint(
-              'CustomerHomeDecider: Existing customer, no installation → Catalog');
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const CustomerCatalogScreen(),
-            ),
-          );
-        } else {
-          // EXISTING CUSTOMER WITH INSTALLATION → DASHBOARD
-          debugPrint(
-              'CustomerHomeDecider: Existing customer with installation → Dashboard');
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const CustomerDashboardScreen(),
-            ),
-          );
-        }
-        return;
-      } catch (dashboardErr) {
-        debugPrint(
-            'CustomerHomeDecider: Dashboard fetch failed: $dashboardErr, checking alternative...');
-      }
+      final dashboard = await DashboardService.fetchDashboard();
 
       if (!mounted) return;
 
-      /// 🔹 FALLBACK: Check if customer profile exists 
-      debugPrint('CustomerHomeDecider: Checking if profile exists...');
-      final profileExists =
-          await CustomerProfileService.profileExists();
+      debugPrint('CustomerHomeDecider: Dashboard fetched successfully');
+      debugPrint(
+          'CustomerHomeDecider: customerId=${dashboard.customerId}, purifierModel=${dashboard.purifierModel}, installDate=${dashboard.installDate}, profileCompleted=${dashboard.profileCompleted}');
 
-      if (!mounted) return;
-
-      /// ❌ NO PROFILE → FORCE DETAILS SCREEN
-      if (!profileExists) {
-        debugPrint(
-            'CustomerHomeDecider: No customer profile, navigating to Profile Form');
-
+      if (!dashboard.profileCompleted) {
+        // Profile not completed, go to profile form
+        debugPrint('CustomerHomeDecider: Profile not completed, navigating to Profile Form');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -113,16 +69,33 @@ class _CustomerHomeDeciderScreenState
         return;
       }
 
-      /// ✅ PROFILE EXISTS but dashboard fetch failed → CATALOG
-      debugPrint(
-          'CustomerHomeDecider: Profile exists but dashboard unavailable → Catalog');
+      /// 🔹 STEP 2: Decide by installation
+      if ((dashboard.purifierModel.isEmpty &&
+              dashboard.installDate.isEmpty) ||
+          dashboard.customerId == 0) {
+        // EXISTING CUSTOMER but NO INSTALLATION → CATALOG
+        debugPrint(
+            'CustomerHomeDecider: Existing customer, no installation → Catalog');
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const CustomerCatalogScreen(),
-        ),
-      );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CustomerCatalogScreen(),
+          ),
+        );
+      } else {
+        // EXISTING CUSTOMER WITH INSTALLATION → DASHBOARD
+        debugPrint(
+            'CustomerHomeDecider: Existing customer with installation → Dashboard');
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CustomerDashboardScreen(),
+          ),
+        );
+      }
+      return;
     } catch (e, st) {
       debugPrint('CustomerHomeDecider error: $e');
       debugPrint('$st');

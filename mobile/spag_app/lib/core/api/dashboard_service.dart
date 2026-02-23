@@ -43,14 +43,10 @@ class DashboardService {
     final jsonData = jsonDecode(response.body);
     debugPrint("[DashboardService] DECODED JSON TYPE: ${jsonData.runtimeType}");
     
-    // Check if profile_completed is false
-    if (jsonData['profile_completed'] == false) {
-      throw Exception(jsonData['message'] ?? 'Installation pending');
-    }
-    
+    // No longer throw for profile_completed false, just parse
     final dashboard = CustomerDashboard.fromJson(jsonData);
     
-    debugPrint("[DashboardService] FINAL PARSED => customerId=${dashboard.customerId}, model='${dashboard.purifierModel}', date='${dashboard.installDate}', services=${dashboard.services.length}");
+    debugPrint("[DashboardService] FINAL PARSED => customerId=${dashboard.customerId}, model='${dashboard.purifierModel}', date='${dashboard.installDate}', services=${dashboard.services.length}, profileCompleted=${dashboard.profileCompleted}");
     debugPrint("[DashboardService] ========== API CALL END ==========");
     
     return dashboard;

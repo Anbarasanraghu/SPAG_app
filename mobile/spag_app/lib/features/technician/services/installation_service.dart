@@ -51,18 +51,30 @@ class InstallationService {
   }
 
   /// 🔹 Complete Installation
-  static Future<void> completeInstallation(int requestId) async {
+  /// Accepts a payload map with required fields matching backend schema
+  static Future<void> completeInstallation(InstallationJob job, Map<String, dynamic> payload) async {
     final token = await AuthService.getToken();
 
+    final required = [
+      'customer_name',
+      'address',
+      'installation_date',
+      'site_details',
+      'purifier_model_id',
+    ];
+    for (var f in required) {
+      if (!payload.containsKey(f) || payload[f] == null || payload[f].toString().isEmpty) {
+        throw Exception('Missing required field: $f');
+      }
+    }
+
     try {
-      final response = await http.put(
-        Uri.parse(
-          "$baseUrl/technician/installations/$requestId/complete",
-        ),
+      final response = await http.put(Uri.parse("$baseUrl/technician/installations/${job.requestId}/complete"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
         },
+        body: jsonEncode(payload),
       );
 
       debugPrint("Complete Installation Response Status: ${response.statusCode}");
@@ -74,6 +86,41 @@ class InstallationService {
       }
     } catch (e) {
       debugPrint("Error completing installation: $e");
+      rethrow;
+    }
+  }
+
+  /// 🔹 Update installation status
+  static Future<void> updateInstallationStatus({
+    required int requestId,
+    required String status,
+  }) async {
+    final token = await AuthService.getToken();
+
+    try {
+      final response = await http.put(
+        Uri.parse(
+          "$baseUrl/technician/installations/$requestId/status",
+        ),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "status": status,
+        }),
+      );
+
+      debugPrint("Update Installation Status Response Status: ${response.statusCode}");
+      debugPrint("Update Installation Status Response Body: ${response.body}");
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          "Failed to update installation status (${response.statusCode}): ${response.body}",
+        );
+      }
+    } catch (e) {
+      debugPrint("Error updating installation status: $e");
       rethrow;
     }
   }

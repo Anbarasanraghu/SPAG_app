@@ -217,27 +217,45 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
   }
 
   Color _statusColor(String status) {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case "ASSIGNED":
         return const Color(0xFF3B82F6);
+      case "IN_PROGRESS":
+      case "IN PROGRESS":
+        return const Color(0xFFF59E0B);
+      case "COMPLETED":
+        return const Color(0xFF10B981);
+      case "PENDING":
       default:
         return const Color(0xFFF59E0B);
     }
   }
 
   Color _statusBgColor(String status) {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case "ASSIGNED":
         return const Color(0xFF3B82F6).withOpacity(0.1);
+      case "IN_PROGRESS":
+      case "IN PROGRESS":
+        return const Color(0xFFF59E0B).withOpacity(0.1);
+      case "COMPLETED":
+        return const Color(0xFF10B981).withOpacity(0.1);
+      case "PENDING":
       default:
         return const Color(0xFFF59E0B).withOpacity(0.1);
     }
   }
 
   IconData _statusIcon(String status) {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case "ASSIGNED":
         return Icons.assignment_turned_in;
+      case "IN_PROGRESS":
+      case "IN PROGRESS":
+        return Icons.hourglass_bottom;
+      case "COMPLETED":
+        return Icons.check_circle;
+      case "PENDING":
       default:
         return Icons.pending_actions;
     }
@@ -302,52 +320,54 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                 ],
               ),
             )
-          : services.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 20,
-                              offset: const Offset(0, 4),
+          : RefreshIndicator(
+              onRefresh: () async => _load(),
+              child: services.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.pending_actions_outlined,
-                          size: 56,
-                          color: Color(0xFF6B7280),
-                        ),
+                            child: const Icon(
+                              Icons.pending_actions_outlined,
+                              size: 56,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            "No pending services",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1F36),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "All services are up to date",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        "No pending services",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1F36),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "All services are up to date",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Column(
+                    )
+                  : Column(
                   children: [
                     // Stats Header
                     Container(
@@ -661,6 +681,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                     ),
                   ],
                 ),
+            ),
     );
   }
 }

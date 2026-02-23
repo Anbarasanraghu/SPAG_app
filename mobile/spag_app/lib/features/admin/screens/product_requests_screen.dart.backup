@@ -1,56 +1,65 @@
 import 'package:flutter/material.dart';
-import '../models/admin_user.dart';
-import '../services/admin_user_service.dart';
+import '../services/admin_service.dart';
+import '../models/product_request_model.dart';
+import 'assign_product_request_screen.dart';
 
-class ManageUsersScreen extends StatefulWidget {
-  const ManageUsersScreen({super.key});
+class ProductRequestsScreen extends StatefulWidget {
+  const ProductRequestsScreen({super.key});
 
   @override
-  State<ManageUsersScreen> createState() => _ManageUsersScreenState();
+  State<ProductRequestsScreen> createState() => _ProductRequestsScreenState();
 }
 
-class _ManageUsersScreenState extends State<ManageUsersScreen> {
-  late Future<List<AdminUser>> usersFuture;
-  
-  // Define valid roles as constants to prevent duplicates
-  static const List<String> _validRoles = ['admin', 'technician', 'customer'];
+class _ProductRequestsScreenState extends State<ProductRequestsScreen> {
+  late Future<List<dynamic>> _requestsFuture;
 
   @override
   void initState() {
     super.initState();
-    usersFuture = AdminUserService.fetchUsers();
-  }
-  
-  /// Normalize and validate role value
-  String _normalizeRole(String role) {
-    final normalized = role.trim().toLowerCase();
-    // Return the role if it's valid, otherwise default to 'customer'
-    return _validRoles.contains(normalized) ? normalized : 'customer';
+    _loadRequests();
   }
 
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return const Color(0xFFEC4899);
-      case 'technician':
-        return const Color(0xFF3B82F6);
-      case 'customer':
+  void _loadRequests() {
+    setState(() {
+      _requestsFuture = AdminService.getProductRequests();
+    });
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+      case 'APPROVED':
         return const Color(0xFF10B981);
+      case 'PENDING':
+        return const Color(0xFFF59E0B);
+      case 'ASSIGNED':
+        return const Color(0xFF3B82F6);
+      case 'REJECTED':
+      case 'CANCELLED':
+        return const Color(0xFFEF4444);
       default:
         return const Color(0xFF6B7280);
     }
   }
 
-  IconData _getRoleIcon(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Icons.admin_panel_settings;
-      case 'technician':
-        return Icons.engineering;
-      case 'customer':
-        return Icons.person;
+  Color _getStatusBgColor(String status) {
+    return _getStatusColor(status).withOpacity(0.1);
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+      case 'APPROVED':
+        return Icons.check_circle;
+      case 'PENDING':
+        return Icons.pending_actions;
+      case 'ASSIGNED':
+        return Icons.assignment_turned_in;
+      case 'REJECTED':
+      case 'CANCELLED':
+        return Icons.cancel;
       default:
-        return Icons.person_outline;
+        return Icons.info;
     }
   }
 
@@ -60,7 +69,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text(
-          "Manage Users & Roles",
+          'Product Requests',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 22,
@@ -73,9 +82,16 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadRequests,
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
-      body: FutureBuilder<List<AdminUser>>(
-        future: usersFuture,
+      body: FutureBuilder(
+        future: _requestsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -99,13 +115,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     child: const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    "Loading users...",
+                    "Loading requests...",
                     style: TextStyle(
                       fontSize: 16,
                       color: Color(0xFF6B7280),
@@ -151,7 +168,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      "Oops! Something went wrong",
+                      "Error loading requests",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -159,10 +176,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      snapshot.error.toString(),
+                    const Text(
+                      "Please try again later",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         color: Color(0xFF6B7280),
                       ),
@@ -173,9 +190,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             );
           }
 
-          final users = snapshot.data!;
+          final List requests = snapshot.data as List;
 
-          if (users.isEmpty) {
+          if (requests.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -195,14 +212,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       ],
                     ),
                     child: const Icon(
-                      Icons.people_outline,
+                      Icons.inventory_2_outlined,
                       size: 56,
                       color: Color(0xFF6B7280),
                     ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    "No users found",
+                    "No product requests",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -211,7 +228,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    "There are no users to display",
+                    "Product requests will appear here",
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF6B7280),
@@ -230,14 +247,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    colors: [Color(0xFFEC4899), Color(0xFFDB2777)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      color: const Color(0xFFEC4899).withOpacity(0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -246,7 +263,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.groups,
+                      Icons.shopping_bag,
                       color: Colors.white,
                       size: 40,
                     ),
@@ -255,7 +272,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          "Total Users",
+                          "Total Requests",
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -264,7 +281,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "${users.length}",
+                          "${requests.length}",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 32,
@@ -277,16 +294,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 ),
               ),
 
-              // Users List
+              // Requests List
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: users.length,
-                  itemBuilder: (_, index) {
-                    final user = users[index];
-                    final normalizedRole = _normalizeRole(user.role);
-                    final roleColor = _getRoleColor(normalizedRole);
-                    final roleIcon = _getRoleIcon(normalizedRole);
+                child: RefreshIndicator(
+                  onRefresh: () async => _loadRequests(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) {
+                    final r = ProductRequest.fromJson(requests[index]);
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -301,118 +317,109 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           ),
                         ],
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // Avatar with role icon
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: roleColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AssignProductRequestScreen(
+                                  requestId: r.id,
+                                ),
                               ),
-                              child: Icon(
-                                roleIcon,
-                                color: roleColor,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            
-                            // User details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user.name ?? 'Unknown',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1A1F36),
-                                    ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                // Icon Container
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEC4899)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
+                                  child: const Icon(
+                                    Icons.inventory_2_outlined,
+                                    color: Color(0xFFEC4899),
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+
+                                // Request Info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        Icons.phone_outlined,
-                                        size: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 4),
                                       Text(
-                                        user.phone,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey[600],
+                                        'Request #${r.id}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1A1F36),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _getStatusBgColor(r.status),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              _getStatusIcon(r.status),
+                                              size: 12,
+                                              color: _getStatusColor(r.status),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              r.status,
+                                              style: TextStyle(
+                                                color:
+                                                    _getStatusColor(r.status),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
-                            ),
-                            
-                            // Role Dropdown
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: roleColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButton<String>(
-                                value: normalizedRole,
-                                underline: const SizedBox(),
-                                isDense: true,
-                                icon: Icon(
-                                  Icons.arrow_drop_down,
-                                  color: roleColor,
                                 ),
-                                style: TextStyle(
-                                  color: roleColor,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+
+                                // Arrow Icon
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEC4899)
+                                        .withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Color(0xFFEC4899),
+                                    size: 14,
+                                  ),
                                 ),
-                                // Build items from constant list to prevent duplicates
-                                items: _validRoles.map((role) {
-                                  return DropdownMenuItem<String>(
-                                    value: role,
-                                    child: Text(
-                                      role[0].toUpperCase() + role.substring(1),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (newRole) async {
-                                  if (newRole == null || newRole == normalizedRole) return;
-
-                                  try {
-                                    await AdminUserService.updateUserRole(
-                                      userId: user.id,
-                                      role: newRole,
-                                    );
-
-                                    if (mounted) {
-                                      setState(() {
-                                        usersFuture = AdminUserService.fetchUsers();
-                                      });
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Error updating role: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     );
