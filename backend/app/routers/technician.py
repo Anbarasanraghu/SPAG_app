@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends ,HTTPException
+from fastapi import APIRouter, Depends ,HTTPException, Body
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.product_request import ProductRequest 
@@ -8,8 +8,7 @@ from app.models.technician_activity_log import TechnicianActivityLog
 from app.models.customer import Customer
 from app.models.purifier_model import PurifierModel
 from app.models.user import User
-from app.schemas.installation_job import InstallationJobResponse
-from datetime import date
+from app.schemas.installation_job import InstallationJobResponse, CompleteInstallationRequest
 
 from app.core.service_generator import generate_services
 from app.core.security import get_current_user
@@ -26,9 +25,13 @@ def technician_installations(
 ):
     technician_id = extract_user_id(user)
 
+    # Show requests assigned to this technician OR unassigned requested products
+    from sqlalchemy import and_, or_
     requests = db.query(ProductRequest).filter(
-        ProductRequest.assigned_technician_id == technician_id,
-        ProductRequest.status.in_(["assigned"])
+        or_(
+            and_(ProductRequest.assigned_technician_id == technician_id, ProductRequest.status.in_(["requested", "assigned"])),
+            and_(ProductRequest.assigned_technician_id == None, ProductRequest.status == "requested")
+        )
     ).all()
 
     # Transform to response schema with customer and model details
@@ -53,6 +56,7 @@ def technician_installations(
                 customer_phone=customer_phone or "",
                 address=address,
                 model_name=model.name,
+                purifier_model_id=model.id,
                 status=req.status
             )
             result.append(job_response)
@@ -64,7 +68,7 @@ def technician_installations(
 @router.put("/installations/{request_id}/complete")
 def complete_installation(
     request_id: int,
-    payload: dict,
+    payload: CompleteInstallationRequest = Body(...),
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
@@ -78,11 +82,7 @@ def complete_installation(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
 
-    # Validate payload required fields
-    required = ["customer_name", "address", "installation_date", "site_details", "purifier_model_id"]
-    for f in required:
-        if f not in payload:
-            raise HTTPException(status_code=400, detail=f"{f} is required")
+    # payload is validated by Pydantic; no manual required field checks needed
 
     # 1️⃣ Create Customer profile linked to user on the request
     auth_user = db.query(User).filter(User.id == request.user_id).first()
@@ -91,15 +91,15 @@ def complete_installation(
 
     customer = Customer(
         user_id=auth_user.id,
-        full_name=payload["customer_name"],
+        full_name=payload.customer_name,
         mobile_number=auth_user.phone,
         email=getattr(auth_user, "email", None),
-        address_line1=payload["address"],
-        address_line2=payload.get("address_line2", payload.get("site_details", "")),
-        city=payload.get("city", ""),
-        state=payload.get("state", ""),
-        pincode=payload.get("pincode", ""),
-        landmark=payload.get("landmark", "")
+        address_line1=payload.address,
+        address_line2=payload.address_line2 or payload.site_details,
+        city=payload.city or "",
+        state=payload.state or "",
+        pincode=payload.pincode or "",
+        landmark=payload.landmark or ""
     )
     db.add(customer)
     db.commit()
@@ -108,8 +108,8 @@ def complete_installation(
     # 2️⃣ Create installation
     installation = Installation(
         customer_id=customer.id,
-        purifier_model_id=payload["purifier_model_id"],
-        install_date=payload["installation_date"],
+        purifier_model_id=payload.purifier_model_id,
+        install_date=payload.installation_date,
         status="ACTIVE"
     )
     db.add(installation)
@@ -117,7 +117,7 @@ def complete_installation(
 
     # 3️⃣ Fetch purifier model and generate services
     purifier_model = db.query(PurifierModel).filter(
-        PurifierModel.id == payload["purifier_model_id"]
+        PurifierModel.id == payload.purifier_model_id
     ).first()
 
     if not purifier_model:
@@ -140,3 +140,29 @@ def complete_installation(
     db.commit()
 
     return {"message": "Installation completed successfully"}
+
+@router.put("/pending-requests/{request_id}/claim")
+def claim_product_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    """Allow technician to claim an unassigned product request"""
+    technician_id = extract_user_id(user)
+    
+    request = db.query(ProductRequest).filter(
+        ProductRequest.id == request_id,
+        ProductRequest.assigned_technician_id == None,
+        ProductRequest.status == "requested"
+    ).first()
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found or already assigned")
+    
+    # Assign to this technician
+    request.assigned_technician_id = technician_id
+    request.status = "assigned"
+    db.commit()
+    db.refresh(request)
+    
+    return {"message": "Request claimed successfully", "request_id": request.id}

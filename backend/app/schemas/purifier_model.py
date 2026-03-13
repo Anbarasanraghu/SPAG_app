@@ -17,3 +17,14 @@ class ProductRequestCreate(BaseModel):
     mobile_number: Optional[str] = None
     gmail: Optional[str] = None
     password: Optional[str] = None
+
+class ProductRequestResponse(BaseModel):
+    """Schema for customer's product request response"""
+    id: int
+    purifier_model_id: int
+    model_name: str
+    status: str  # "requested", "assigned", or "completed"
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True

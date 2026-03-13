@@ -449,3 +449,65 @@ def technician_services(
         ServiceHistory.technician_id == user.id,
         ServiceHistory.status.in_(["ASSIGNED", "IN_PROGRESS"])
     ).all()
+
+
+@router.get("/admin/dashboard")
+def get_admin_dashboard_stats(
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    # Debug: Check what status values exist
+    all_statuses = db.query(ServiceHistory.status).distinct().all()
+    print(f"DEBUG: All service statuses in database: {[s[0] for s in all_statuses]}")
+
+    # Debug: Check what role values exist
+    all_roles = db.query(User.role).distinct().all()
+    print(f"DEBUG: All user roles in database: {[r[0] for r in all_roles]}")
+
+    # Total users count
+    total_users = db.query(User).count()
+
+    # Pending services count - let's be more inclusive
+    # Include any status that isn't "COMPLETED"
+    pending_services = db.query(ServiceHistory).filter(
+        ServiceHistory.status != "COMPLETED",
+        ServiceHistory.status.isnot(None)
+    ).count()
+
+    print(f"DEBUG: Pending services query result: {pending_services}")
+
+    # Product requests count
+    product_requests = db.query(ProductRequest).count()
+
+    # Active now (users who logged in recently - let's say within last 24 hours)
+    # For now, we'll use a simple count of all users as active
+    active_now = total_users  # TODO: Implement proper active user tracking
+
+    # Technicians count - debug this
+    technicians = db.query(User).filter(User.role == "technician").count()
+    print(f"DEBUG: Technicians count (role='technician'): {technicians}")
+
+    # Also check for other possible role names
+    technicians_alt = db.query(User).filter(User.role.ilike("%tech%")).count()
+    print(f"DEBUG: Technicians count (role containing 'tech'): {technicians_alt}")
+
+    # Resolved percentage (completed services / total services)
+    total_services = db.query(ServiceHistory).count()
+    resolved_services = db.query(ServiceHistory).filter(
+        ServiceHistory.status == "COMPLETED"
+    ).count()
+    resolved_percentage = (resolved_services / total_services * 100) if total_services > 0 else 0.0
+
+    # User growth data (last 7 days - simplified)
+    # For now, return some sample growth data
+    user_growth_data = [1200, 1150, 1180, 1220, 1250, 1270, total_users]
+
+    return {
+        "total_users": total_users,
+        "pending_services": pending_services,
+        "product_requests": product_requests,
+        "active_now": active_now,
+        "technicians": technicians,
+        "resolved_percentage": resolved_percentage,
+        "user_growth_data": user_growth_data
+    }

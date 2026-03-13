@@ -139,5 +139,5 @@ if __name__ == "__main__":
     import uvicorn
     # print("Starting server on 127.0.0.1:8000")
     # uvicorn.run(app, host="127.0.0.1", port=8000)
-    print("Starting server on 192.168.1.7:8000")
-    uvicorn.run(app, host="192.168.1.3", port=8000)
+    print("Starting server on 192.168.1.7:3000")
+    uvicorn.run(app, host="192.168.1.3", port=3000)

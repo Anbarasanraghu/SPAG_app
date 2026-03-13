@@ -9,7 +9,7 @@ import random
 from datetime import datetime, timedelta
 from twilio.rest import Client
 from fastapi import HTTPException
-from app.core.security import hash_password
+from app.core.security import hash_password, get_current_user
 
 from app.database import get_db
 from app.models.user import User
@@ -65,38 +65,62 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
-        user = db.query(User).filter(User.phone == data.phone).first()
-    except ProgrammingError:
-        # ORM query failed due to missing columns; rollback the session and run a minimal raw query
+        # Validate required fields
+        if not data.phone or not data.password:
+            logger.error("Missing phone or password in login request")
+            raise HTTPException(status_code=400, detail="phone and password are required")
+        
+        logger.info(f"Login attempt for phone: {data.phone}")
+        
         try:
-            db.rollback()
-        except Exception:
-            pass
-        # fallback: DB may be missing newly-added columns (email/profile_completed).
-        # Query minimal columns directly and construct a lightweight object.
-        res = db.execute(text("SELECT id, name, phone, password_hash, role, NULL as profile_completed FROM users WHERE phone = :phone LIMIT 1"), {"phone": data.phone})
-        row = res.fetchone()
-        if row:
-            user = SimpleNamespace(id=row[0], name=row[1], phone=row[2], password_hash=row[3], role=row[4], profile_completed=False)
-        else:
-            user = None
+            user = db.query(User).filter(User.phone == data.phone).first()
+        except ProgrammingError as e:
+            logger.error(f"ProgrammingError in login: {e}")
+            # ORM query failed due to missing columns; rollback the session and run a minimal raw query
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            # fallback: DB may be missing newly-added columns (email/profile_completed).
+            # Query minimal columns directly and construct a lightweight object.
+            res = db.execute(text("SELECT id, name, phone, password_hash, role, NULL as profile_completed FROM users WHERE phone = :phone LIMIT 1"), {"phone": data.phone})
+            row = res.fetchone()
+            if row:
+                user = SimpleNamespace(id=row[0], name=row[1], phone=row[2], password_hash=row[3], role=row[4], profile_completed=False)
+            else:
+                user = None
 
-    if not user or not verify_password(data.password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+        if not user:
+            logger.error(f"User not found for phone: {data.phone}")
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+        
+        if not verify_password(data.password, user.password_hash):
+            logger.error(f"Password verification failed for phone: {data.phone}")
+            raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    token = create_access_token({
-        "user_id": user.id,
-        "phone": user.phone,
-        "role": user.role
-    })
+        token = create_access_token({
+            "user_id": user.id,
+            "phone": user.phone,
+            "role": user.role
+        })
 
-    # 🔥 CHECK PROFILE (use profile_completed flag)
-    return {
-        "token": token,
-        "role": user.role,
-        "profile_exists": bool(getattr(user, "profile_completed", False))
-    }
+        logger.info(f"Login successful for phone: {data.phone}")
+        
+        # 🔥 CHECK PROFILE (use profile_completed flag)
+        return {
+            "token": token,
+            "role": user.role,
+            "profile_exists": bool(getattr(user, "profile_completed", False))
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Unexpected error in login: {e}")
+        raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
 
 
 @router.post("/forgot-password")
@@ -173,3 +197,30 @@ def reset_password(
     print("New hash:", user.password_hash)
 
     return {"message": "Password reset successfully"}
+
+
+@router.get("/me")
+def get_current_user_info(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current authenticated user's information"""
+    user_id = current_user.get("user_id")
+    
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "id": user.id,
+            "name": user.name,
+            "phone": user.phone,
+            "email": user.email,
+            "role": user.role,
+            "profile_completed": user.profile_completed
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching user info: {str(e)}")
