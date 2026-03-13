@@ -3,7 +3,6 @@ import 'features/auth/screens/login_screen.dart';
 import 'features/customer/screens/customer_catalog_screen.dart';
 import 'features/customer/screens/customer_main_screen.dart';
 import 'features/customer/screens/customer_dashboard_screen.dart';
-import 'features/customer/screens/customer_profile_form_screen.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/technician/screens/technician_home_screen.dart';
@@ -105,7 +104,6 @@ class SpagApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/purifier-catalog': (context) => const CustomerCatalogScreen(),
         '/customer-dashboard': (context) => const CustomerDashboardScreen(),
-        '/customer-profile': (context) => const CustomerProfileFormScreen(),
       },
       onUnknownRoute: (RouteSettings settings) {
         return MaterialPageRoute(

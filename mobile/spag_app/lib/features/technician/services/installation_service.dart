@@ -79,7 +79,6 @@ class InstallationService {
           "Content-Type": "application/json",
         },
         body: jsonEncode(payload),
-        body: jsonEncode(payload),
       );
 
       debugPrint(

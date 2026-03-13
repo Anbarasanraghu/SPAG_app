@@ -37,6 +37,18 @@ class DashboardService {
 
     if (response.statusCode != 200) {
       debugPrint("[DashboardService] ERROR: Got status ${response.statusCode}");
+      // Some backend builds return 404 when there is no installation yet.
+      if (response.statusCode == 404) {
+        final detail = () {
+          try {
+            final decoded = jsonDecode(response.body);
+            return decoded['detail']?.toString() ?? response.body;
+          } catch (_) {
+            return response.body;
+          }
+        }();
+        throw Exception("Installation not found: $detail");
+      }
       throw Exception("Failed to load dashboard (Status: ${response.statusCode})");
     }
 

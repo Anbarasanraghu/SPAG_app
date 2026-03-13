@@ -73,11 +73,24 @@ def complete_installation(
     user=Depends(get_current_user)
 ):
     technician_id = extract_user_id(user)
+    print(f"DEBUG: technician_id: {technician_id}, request_id: {request_id}")
+    logging.getLogger(__name__).info(f"DEBUG: technician_id: {technician_id}, request_id: {request_id}")
+
+    # Check if request exists at all
+    any_request = db.query(ProductRequest).filter(ProductRequest.id == request_id).first()
+    print(f"DEBUG: request {request_id} exists: {any_request is not None}")
+    if any_request:
+        print(f"DEBUG: request {request_id} assigned_technician_id: {any_request.assigned_technician_id}, status: {any_request.status}")
 
     request = db.query(ProductRequest).filter(
         ProductRequest.id == request_id,
         ProductRequest.assigned_technician_id == technician_id
     ).first()
+    print(f"DEBUG: request found with technician filter: {request}")
+    logging.getLogger(__name__).info(f"DEBUG: request found with technician filter: {request}")
+    if request:
+        print(f"DEBUG: request details - id: {request.id}, assigned_technician_id: {request.assigned_technician_id}, status: {request.status}")
+        logging.getLogger(__name__).info(f"DEBUG: request details - id: {request.id}, assigned_technician_id: {request.assigned_technician_id}, status: {request.status}")
 
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")

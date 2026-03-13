@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/api/dashboard_service.dart';
 import '../../../core/services/auth_service.dart';
-import '../../customer/services/customer_profile_service.dart';
 import 'customer_dashboard_screen.dart';
 import 'customer_catalog_screen.dart';
-import 'customer_profile_form_screen.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../technician/screens/technician_home_screen.dart';
 
@@ -56,18 +54,6 @@ class _CustomerHomeDeciderScreenState
       debugPrint('CustomerHomeDecider: Dashboard fetched successfully');
       debugPrint(
           'CustomerHomeDecider: customerId=${dashboard.customerId}, purifierModel=${dashboard.purifierModel}, installDate=${dashboard.installDate}, profileCompleted=${dashboard.profileCompleted}');
-
-      if (!dashboard.profileCompleted) {
-        // Profile not completed, go to profile form
-        debugPrint('CustomerHomeDecider: Profile not completed, navigating to Profile Form');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const CustomerProfileFormScreen(),
-          ),
-        );
-        return;
-      }
 
       /// 🔹 STEP 2: Decide by installation
       if ((dashboard.purifierModel.isEmpty &&

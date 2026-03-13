@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controller/auth_controller.dart';
 import '../../auth/services/auth_service.dart';
-import '../../customer/screens/customer_profile_form_screen.dart';
 import '../../customer/screens/customer_main_screen.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../technician/screens/technician_home_screen.dart';
@@ -31,9 +30,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final phoneController    = TextEditingController();
-  final phoneController    = TextEditingController();
   final passwordController = TextEditingController();
-  final authController     = AuthController();
   final authController     = AuthController();
   bool loading = false;
   bool obscure = true;
@@ -79,14 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'customer':
         case 'Customer':
         default:
-          if (!resp.profileExists) {
-            debugPrint('[LoginScreen] Routing to CustomerProfileFormScreen');
-            nextScreen = const CustomerProfileFormScreen();
-          } else {
-            debugPrint('[LoginScreen] Routing to CustomerMainScreen');
-            nextScreen = CustomerMainScreen();
-            nextScreen = CustomerMainScreen();
-          }
+          debugPrint('[LoginScreen] Routing to CustomerMainScreen');
+          nextScreen = const CustomerMainScreen();
       }
 
       if (!mounted) {
