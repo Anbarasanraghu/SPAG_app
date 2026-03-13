@@ -3,11 +3,31 @@ import '../models/admin_customer.dart';
 import '../services/admin_customer_service.dart';
 import 'customer_detail_screen.dart';
 
-// ─── COLOUR TOKENS (exact web UI) ────────────────────────
-// bg:#F5F9FF  panel:#FFFFFF  surface:#EAF3FF
-// accent:#2A8FD4  mid:#5AABDE  soft:#C4DFF5
-// text:#0D2A3F  muted:#6B8FA8  hairline:#D6E8F5
+// ─── COLOUR TOKENS — matches AdminDashboard ui_kit ───────────────────────────
+const _kBg        = Color(0xFFF5F5F0); // warm off-white (kBg)
+const _kDarkPill  = Color(0xFF1E1E2E); // hero card bg (kDarkPill)
+const _kInk       = Color(0xFF1A1A1A); // primary text (kInk)
+const _kInk2      = Color(0xFF666666); // secondary text (kInk2)
+const _kWhite     = Color(0xFFFFFFFF);
+const _kMint      = Color(0xFF82DCB4); // badge / hero dot
+const _kLavender  = Color(0xFFB4A0FF);
+const _kMintCard  = Color(0xFF82DCB4);
+const _kBlush     = Color(0xFFFFB4BE);
+const _kPeach     = Color(0xFFFFB48C);
+const _kSage      = Color(0xFF96C8A0);
+const _kSky       = Color(0xFF8CC8F0);
 
+// Six pastel card colours cycling across customer cards (matches action grid)
+const _cardColors = [
+  Color(0xFFB4A0FF), // lavender
+  Color(0xFF82DCB4), // mint
+  Color(0xFF8CC8F0), // sky
+  Color(0xFFFFB48C), // peach
+  Color(0xFFFFB4BE), // blush
+  Color(0xFF96C8A0), // sage
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 class AllCustomersScreen extends StatefulWidget {
   const AllCustomersScreen({super.key});
 
@@ -16,27 +36,8 @@ class AllCustomersScreen extends StatefulWidget {
 }
 
 class _AllCustomersScreenState extends State<AllCustomersScreen> {
-  bool loading = true;
-  List<AdminCustomer> customers = [];
-
-  static const _bg       = Color(0xFFF5F9FF);
-  static const _panel    = Color(0xFFFFFFFF);
-  static const _surface  = Color(0xFFEAF3FF);
-  static const _accent   = Color(0xFF2A8FD4);
-  static const _soft     = Color(0xFFC4DFF5);
-  static const _text     = Color(0xFF0D2A3F);
-  static const _muted    = Color(0xFF6B8FA8);
-  static const _hairline = Color(0xFFD6E8F5);
-
-  // Aqua-palette avatar colours — mirrors web hex() map
-  static const _avatarColors = [
-    Color(0xFF2A8FD4),
-    Color(0xFF2A9D6B),
-    Color(0xFF7A6FD4),
-    Color(0xFFD4842A),
-    Color(0xFF5AABDE),
-    Color(0xFFD45A8A),
-  ];
+  bool _loading = true;
+  List<AdminCustomer> _customers = [];
 
   @override
   void initState() {
@@ -48,11 +49,11 @@ class _AllCustomersScreenState extends State<AllCustomersScreen> {
     try {
       final data = await AdminCustomerService.fetchCustomers();
       setState(() {
-        customers = data;
-        loading = false;
+        _customers = data;
+        _loading = false;
       });
     } catch (e) {
-      setState(() => loading = false);
+      setState(() => _loading = false);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -60,376 +61,644 @@ class _AllCustomersScreenState extends State<AllCustomersScreen> {
               Icon(Icons.error_outline, color: Colors.white, size: 14),
               SizedBox(width: 8),
               Text('Failed to load customers',
-                  style: TextStyle(fontSize: 12, fontFamily: 'monospace')),
+                  style: TextStyle(fontSize: 12)),
             ]),
-            backgroundColor: const Color(0xFFE05A5A),
+            backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
     }
   }
 
-  Color _getAvatarColor(int index) => _avatarColors[index % _avatarColors.length];
+  Color _cardColor(int i) => _cardColors[i % _cardColors.length];
 
-  String _getInitials(String name) {
+  String _initials(String name) {
     final parts = name.trim().split(' ');
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
 
+  // ── Pull-to-refresh ───────────────────────────────────────────────────────
+  Future<void> _refresh() async {
+    setState(() => _loading = true);
+    await _loadCustomers();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: _kBg,
 
-      // ── App Bar — dual-line eyebrow pattern ──────────────
+      // ── AppBar — plain back arrow, no title (hero card carries the heading)
       appBar: AppBar(
-        backgroundColor: _bg,
-        surfaceTintColor: _bg,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: _text,
-        titleSpacing: 0,
         leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 20),
-              onPressed: () {
-                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              },
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text('ADMIN PANEL',
-                style: TextStyle(
-                  fontSize: 7, fontWeight: FontWeight.w700,
-                  color: _muted, letterSpacing: 2.2, fontFamily: 'monospace',
-                )),
-            Text('All Customers',
-                style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w700,
-                  color: _text, letterSpacing: -0.2,
-                )),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: _hairline),
+          icon: const Icon(Icons.arrow_back, color: _kInk),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          },
         ),
       ),
 
-      body: loading
-
-        // ── LOADING ─────────────────────────────────────────
-        ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _panel,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: _accent.withOpacity(0.10),
-                        blurRadius: 14, offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(_accent),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('Loading customers...',
-                    style: TextStyle(
-                      fontSize: 10, color: _muted,
-                      fontFamily: 'monospace', letterSpacing: 0.5,
-                    )),
-              ],
-            ),
-          )
-
-        // ── EMPTY ────────────────────────────────────────────
-        : customers.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: _surface,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.people_outline_rounded, size: 36, color: _soft,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('No customers found',
-                      style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w700, color: _text,
-                      )),
-                  const SizedBox(height: 3),
-                  const Text('Customer list is empty',
-                      style: TextStyle(
-                        fontSize: 10, color: _muted, fontFamily: 'monospace',
-                      )),
-                ],
-              ),
-            )
-
-        // ── LIST ─────────────────────────────────────────────
-        : Column(
-            children: [
-
-              // Stats banner — accent gradient, mirrors hero cards
-              Container(
-                margin: const EdgeInsets.fromLTRB(11, 11, 11, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_accent, Color(0xFF1A6BA8)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _accent.withOpacity(0.16),
-                      blurRadius: 12, offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.13),
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(color: Colors.white.withOpacity(0.15)),
-                      ),
-                      child: const Icon(
-                        Icons.groups_rounded, color: Colors.white, size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 11),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        top: false,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _customers.isEmpty
+                ? _buildEmpty()
+                : RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.zero,
                       children: [
-                        // Eyebrow — mirrors "CAPACITY / COLORS / GRADE" labels
-                        const Text('TOTAL CUSTOMERS',
-                            style: TextStyle(
-                              fontSize: 7, fontWeight: FontWeight.w700,
-                              color: Colors.white60, letterSpacing: 2.2,
-                              fontFamily: 'monospace',
-                            )),
-                        const SizedBox(height: 2),
-                        Text('${customers.length}',
-                            style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w700,
-                              color: Colors.white, letterSpacing: -1.0,
-                            )),
-                      ],
-                    ),
-                    const Spacer(),
-                    // Grade-style pill — mirrors web stats "Pro" chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: Colors.white.withOpacity(0.18)),
-                      ),
-                      child: const Text('PRO',
-                          style: TextStyle(
-                            fontSize: 7, fontWeight: FontWeight.w700,
-                            color: Colors.white, letterSpacing: 1.8,
-                            fontFamily: 'monospace',
-                          )),
-                    ),
-                  ],
-                ),
-              ),
+                        // ── 1. Hero Card ───────────────────────────────────
+                        _HeroCard(total: _customers.length),
+                        const SizedBox(height: 14),
 
-              const SizedBox(height: 10),
+                        // ── 2. Bento Stats Row ─────────────────────────────
+                        _StatsRow(total: _customers.length),
+                        const SizedBox(height: 14),
 
-              // Section eyebrow — mirrors "AVAILABLE MODELS" / "CUSTOMERS"
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 11),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('CUSTOMERS',
-                      style: TextStyle(
-                        fontSize: 7, fontWeight: FontWeight.w700,
-                        color: _muted, letterSpacing: 2.4,
-                        fontFamily: 'monospace',
-                      )),
-                ),
-              ),
-              const SizedBox(height: 7),
+                        // ── 3. Mini Stats Row ──────────────────────────────
+                        _MiniStatsRow(total: _customers.length),
+                        const SizedBox(height: 20),
 
-              // Customer list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(11, 0, 11, 20),
-                  itemCount: customers.length,
-                  itemBuilder: (context, index) {
-                    final c     = customers[index];
-                    final color = _getAvatarColor(index);
+                        // ── 4. Section Title ───────────────────────────────
+                        _SectionTitle('Customer List'),
+                        const SizedBox(height: 12),
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      decoration: BoxDecoration(
-                        color: _panel,
-                        borderRadius: BorderRadius.circular(11),
-                        border: Border.all(color: _hairline),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _accent.withOpacity(0.04),
-                            blurRadius: 7, offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(11),
-                          splashColor: color.withOpacity(0.06),
-                          highlightColor: color.withOpacity(0.03),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  CustomerDetailScreen(customerId: c.customerId),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 9),
-                            child: Row(
-                              children: [
-
-                                // Avatar — initials in tinted rounded box
-                                // mirrors NavRail thumb style
-                                Container(
-                                  width: 36, height: 36,
-                                  decoration: BoxDecoration(
-                                    color: color.withOpacity(0.11),
-                                    borderRadius: BorderRadius.circular(9),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      _getInitials(c.name),
-                                      style: TextStyle(
-                                        color: color,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        fontFamily: 'monospace',
-                                      ),
+                        // ── 5. Customer Cards ──────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: List.generate(_customers.length, (i) {
+                              final c = _customers[i];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _CustomerCard(
+                                  customer: c,
+                                  color: _cardColor(i),
+                                  initials: _initials(c.name),
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CustomerDetailScreen(
+                                          customerId: c.customerId),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-
-                                // Info column
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(c.name,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: _text,
-                                            letterSpacing: -0.1,
-                                          )),
-                                      const SizedBox(height: 4),
-
-                                      // Phone row
-                                      Row(children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF2A9D6B)
-                                                .withOpacity(0.10),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: const Icon(
-                                            Icons.phone_rounded,
-                                            size: 9,
-                                            color: Color(0xFF2A9D6B),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Expanded(
-                                          child: Text(c.phone,
-                                              style: const TextStyle(
-                                                fontSize: 10, color: _muted,
-                                                fontFamily: 'monospace',
-                                              )),
-                                        ),
-                                      ]),
-                                      const SizedBox(height: 3),
-
-                                      // Address row
-                                      Row(children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            color: _accent.withOpacity(0.10),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: const Icon(
-                                            Icons.location_on_rounded,
-                                            size: 9, color: _accent,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Expanded(
-                                          child: Text(c.address,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 10, color: _muted,
-                                                fontFamily: 'monospace',
-                                              )),
-                                        ),
-                                      ]),
-                                    ],
-                                  ),
-                                ),
-
-                                // Arrow chip — mirrors web arrow_forward_ios chip
-                                Container(
-                                  width: 22, height: 22,
-                                  decoration: BoxDecoration(
-                                    color: color.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: color, size: 9,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            }),
                           ),
                         ),
-                      ),
-                    );
-                  },
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: _kLavender.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Icon(Icons.people_outline_rounded,
+                size: 40, color: _kInk2),
+          ),
+          const SizedBox(height: 14),
+          const Text('No customers found',
+              style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w800, color: _kInk)),
+          const SizedBox(height: 4),
+          const Text('Customer list is empty',
+              style: TextStyle(fontSize: 11, color: _kInk2)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO CARD  — identical dark pill to AdminDashboard
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroCard extends StatelessWidget {
+  final int total;
+  const _HeroCard({required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: _kDarkPill,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Decorative circles
+            Positioned(
+              top: -30, right: -20,
+              child: Container(
+                width: 140, height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _kLavender.withOpacity(0.18),
                 ),
               ),
-            ],
+            ),
+            Positioned(
+              bottom: -20, right: 60,
+              child: Container(
+                width: 90, height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _kMint.withOpacity(0.15),
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(26),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Active badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: _kMint.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: _kMint.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6, height: 6,
+                          decoration: const BoxDecoration(
+                              color: _kMint, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 6),
+                        Text('$total Customers',
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _kMint)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Title
+                  const Text(
+                    'All\nCustomers',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: _kWhite,
+                      height: 1.1,
+                      letterSpacing: -1,
+                    ),
+                  ),
+                  const Spacer(),
+                  // Pills
+                  Row(
+                    children: [
+                      _HeroPill(label: '$total Total', color: _kPeach),
+                      const SizedBox(width: 8),
+                      _HeroPill(label: '4 Active', color: _kLavender),
+                      const SizedBox(width: 8),
+                      _HeroPill(label: '3 Areas', color: _kMintCard),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _HeroPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BENTO STATS ROW — mirrors dashboard StatsRow
+// ─────────────────────────────────────────────────────────────────────────────
+class _StatsRow extends StatelessWidget {
+  final int total;
+  const _StatsRow({required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Large left bento — total customers
+          Expanded(
+            flex: 5,
+            child: _BentoCard(
+              color: _kLavender,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Total Customers',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _kInk2)),
+                  const SizedBox(height: 6),
+                  Text('$total',
+                      style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                          color: _kInk,
+                          height: 1,
+                          letterSpacing: -2)),
+                  const SizedBox(height: 10),
+                  _SmallBadge(
+                      label: '+2 this month ↑',
+                      textColor: const Color(0xFF4A3C8C)),
+                ],
+              ),
+            ),
           ),
+          const SizedBox(width: 12),
+          // Right column — two small bentos
+          Expanded(
+            flex: 4,
+            child: Column(
+              children: [
+                _BentoCard(
+                  color: _kMintCard,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Active',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: _kInk2)),
+                      const SizedBox(height: 6),
+                      const Text('4',
+                          style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w900,
+                              color: _kInk,
+                              height: 1,
+                              letterSpacing: -2)),
+                      const SizedBox(height: 8),
+                      const _SmallBadge(
+                          label: 'online',
+                          textColor: Color(0xFF1A6B48)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _BentoCard(
+                  color: _kBlush,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Areas',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: _kInk2)),
+                      const SizedBox(height: 6),
+                      const Text('3',
+                          style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w900,
+                              color: _kInk,
+                              height: 1,
+                              letterSpacing: -2)),
+                      const SizedBox(height: 8),
+                      const _SmallBadge(
+                          label: 'zones',
+                          textColor: Color(0xFF8B3047)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MINI STATS ROW — mirrors dashboard MiniStatsRow
+// ─────────────────────────────────────────────────────────────────────────────
+class _MiniStatsRow extends StatelessWidget {
+  final int total;
+  const _MiniStatsRow({required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+              child: _MiniCard(
+                  label: 'Orders', value: '12', icon: '📦', color: _kSage)),
+          const SizedBox(width: 10),
+          Expanded(
+              child: _MiniCard(
+                  label: 'Services', value: '8', icon: '⚙️', color: _kSky)),
+          const SizedBox(width: 10),
+          Expanded(
+              child: _MiniCard(
+                  label: 'Resolved', value: '92%', icon: '✅', color: _kPeach)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String icon;
+  final Color color;
+  const _MiniCard(
+      {required this.label,
+      required this.value,
+      required this.icon,
+      required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 18)),
+          const SizedBox(height: 8),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: _kInk,
+                  height: 1)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 9, fontWeight: FontWeight.w600, color: _kInk2)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION TITLE — mirrors dashboard SectionTitle
+// ─────────────────────────────────────────────────────────────────────────────
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: _kInk,
+                  letterSpacing: -0.5)),
+          const Text('View all →',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: _kInk2,
+                  fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER CARD — pastel bento style matching action cards
+// ─────────────────────────────────────────────────────────────────────────────
+class _CustomerCard extends StatefulWidget {
+  final AdminCustomer customer;
+  final Color color;
+  final String initials;
+  final VoidCallback onTap;
+  const _CustomerCard(
+      {required this.customer,
+      required this.color,
+      required this.initials,
+      required this.onTap});
+
+  @override
+  State<_CustomerCard> createState() => _CustomerCardState();
+}
+
+class _CustomerCardState extends State<_CustomerCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.all(16),
+        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transformAlignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: widget.color.withOpacity(_pressed ? 0.65 : 0.4),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          children: [
+            // Avatar — rounded square, white translucent bg
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: _kWhite.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Text(widget.initials,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: _kInk)),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.customer.name,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _kInk,
+                          letterSpacing: -0.3)),
+                  const SizedBox(height: 5),
+                  // Phone
+                  Row(children: [
+                    Container(
+                      width: 18, height: 18,
+                      decoration: BoxDecoration(
+                        color: _kWhite.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                          child: Text('📞',
+                              style: TextStyle(fontSize: 9))),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(widget.customer.phone,
+                          style: const TextStyle(
+                              fontSize: 11, color: _kInk2)),
+                    ),
+                  ]),
+                  const SizedBox(height: 4),
+                  // Address
+                  Row(children: [
+                    Container(
+                      width: 18, height: 18,
+                      decoration: BoxDecoration(
+                        color: _kWhite.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                          child: Text('📍',
+                              style: TextStyle(fontSize: 9))),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(widget.customer.address,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 11, color: _kInk2)),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Arrow chip — same as dashboard action cards
+            Container(
+              width: 30, height: 30,
+              decoration: BoxDecoration(
+                color: _kWhite.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 13, color: _kInk),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED WIDGETS
+// ─────────────────────────────────────────────────────────────────────────────
+class _BentoCard extends StatelessWidget {
+  final Color color;
+  final Widget child;
+  const _BentoCard({required this.color, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.45),
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SmallBadge extends StatelessWidget {
+  final String label;
+  final Color textColor;
+  const _SmallBadge({required this.label, required this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: _kWhite.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: textColor)),
     );
   }
 }

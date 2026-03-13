@@ -5,9 +5,21 @@ import '../services/technician_service_log_service.dart';
 import '../models/service_status_log.dart';
 import '../models/technician_activity_log.dart';
 
+// ─── COLOUR TOKENS — matches AdminDashboard ui_kit ───────────────────────────
+const _kBg       = Color(0xFFF5F5F0);
+const _kDarkPill = Color(0xFF1E1E2E);
+const _kInk      = Color(0xFF1A1A1A);
+const _kInk2     = Color(0xFF666666);
+const _kWhite    = Color(0xFFFFFFFF);
+const _kMint     = Color(0xFF82DCB4);
+const _kLavender = Color(0xFFB4A0FF);
+const _kPeach    = Color(0xFFFFB48C);
+const _kBlush    = Color(0xFFFFB4BE);
+const _kSage     = Color(0xFF96C8A0);
+const _kSky      = Color(0xFF8CC8F0);
+
 class ServiceDetailScreen extends StatefulWidget {
   final int serviceId;
-
   const ServiceDetailScreen({super.key, required this.serviceId});
 
   @override
@@ -26,30 +38,29 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     _loadDetail();
   }
 
+  // ── ALL LOGIC UNCHANGED ───────────────────────────────────────────────────
   Future<void> _loadDetail() async {
     try {
-      final data =
-          await ServiceDetailService.fetchServiceDetail(widget.serviceId);
+      final data = await ServiceDetailService.fetchServiceDetail(widget.serviceId);
       setState(() {
         detail = data;
         loading = false;
       });
 
-      // Fetch related logs
       try {
-        final fetchedStatusLogs = await TechnicianServiceLogService.fetchStatusLogsForService(widget.serviceId);
+        final fetchedStatusLogs = await TechnicianServiceLogService
+            .fetchStatusLogsForService(widget.serviceId);
         final List<TechnicianActivityLog> fetchedTechLogs = [];
         if (detail != null && detail!.technicianId != null) {
-          final tlogs = await TechnicianServiceLogService.fetchTechnicianActivityLogs(detail!.technicianId!);
+          final tlogs = await TechnicianServiceLogService
+              .fetchTechnicianActivityLogs(detail!.technicianId!);
           fetchedTechLogs.addAll(tlogs);
         }
-
         setState(() {
           statusLogs = fetchedStatusLogs;
           techLogs = fetchedTechLogs;
         });
       } catch (e) {
-        // ignore log fetch errors but print for debugging
         debugPrint('Error fetching related logs: $e');
       }
     } catch (e) {
@@ -57,25 +68,23 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                SizedBox(width: 12),
-                Text("Failed to load service details"),
-              ],
-            ),
+            content: const Row(children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Text("Failed to load service details"),
+            ]),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+                borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
     }
   }
 
-  bool get canMarkCompleted => detail != null && detail!.status == "ASSIGNED";
+  bool get canMarkCompleted =>
+      detail != null && detail!.status == "ASSIGNED";
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -99,520 +108,588 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text(
-          "Service Details",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1F36),
-        leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 20),
-              onPressed: () {
-                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              },
-        ),
-      ),
-      body: loading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    "Loading details...",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : detail == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 20,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.info_outline,
-                          size: 56,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        "No details found",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1F36),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "Service details are not available",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Status Header Card
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              _getStatusColor(detail!.status),
-                              _getStatusColor(detail!.status).withOpacity(0.8),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getStatusColor(detail!.status)
-                                  .withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                _getStatusIcon(detail!.status),
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Service #${detail!.serviceNumber}",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      detail!.status,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Service Info
-                      _section(
-                        "Service Information",
-                        Icons.info_outline,
-                        const Color(0xFF6366F1),
-                        [
-                          _row("Service ID", detail!.serviceId.toString(),
-                              Icons.confirmation_number_outlined),
-                          _row("Service Date", detail!.serviceDate,
-                              Icons.calendar_today_outlined),
-                          _row("Service Number", detail!.serviceNumber.toString(),
-                              Icons.numbers),
-                        ],
-                      ),
-
-                      // Customer Info
-                      _section(
-                        "Customer Information",
-                        Icons.person_outline,
-                        const Color(0xFF8B5CF6),
-                        [
-                          _row("Customer ID", detail!.customerId.toString(),
-                              Icons.badge_outlined),
-                          _row("Name", detail!.customerName,
-                              Icons.account_circle_outlined),
-                          _row("Phone", detail!.customerPhone,
-                              Icons.phone_outlined),
-                          _row("Address", detail!.customerAddress,
-                              Icons.location_on_outlined),
-                        ],
-                      ),
-
-                      // Product Info
-                      _section(
-                        "Product Information",
-                        Icons.inventory_2_outlined,
-                        const Color(0xFFEC4899),
-                        [
-                          _row("Installation ID",
-                              detail!.installationId.toString(), Icons.settings),
-                          _row("Model", detail!.productModel,
-                              Icons.devices_outlined),
-                        ],
-                      ),
-
-                      // Technician Info
-                      _section(
-                        "Technician Information",
-                        Icons.engineering_outlined,
-                        const Color(0xFF10B981),
-                        [
-                          _row(
-                              "Technician",
-                              detail!.technicianName ?? "Not Assigned",
-                              Icons.person_outline),
-                          _row("Phone", detail!.technicianPhone ?? "-",
-                              Icons.phone_outlined),
-                        ],
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Action Button
-                      if (canMarkCompleted)
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF10B981).withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await TechnicianServiceLogService
-                                  .updateServiceStatus(
-                                serviceId: detail!.serviceId,
-                                status: "COMPLETED",
-                              );
-                              _loadDetail();
-
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Row(
-                                      children: [
-                                        Icon(Icons.check_circle,
-                                            color: Colors.white),
-                                        SizedBox(width: 12),
-                                        Text("Service marked as completed"),
-                                      ],
-                                    ),
-                                    backgroundColor: const Color(0xFF10B981),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_circle_outline, size: 22),
-                                SizedBox(width: 12),
-                                Text(
-                                  "Mark Service Completed",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 20),
-                        // Status Change History
-                        _section(
-                          'Status Change History',
-                          Icons.history, 
-                          const Color(0xFF6366F1),
-                          statusLogs.isEmpty
-                              ? [
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: Text('No status changes recorded.'),
-                                  )
-                                ]
-                              : statusLogs.map((log) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '${log.oldStatus ?? '-'} → ${log.newStatus}',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                'At: ${log.changedAt}',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (log.changedBy != null)
-                                          Text('By: ${log.changedBy}'),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                        ),
-
-                        // Technician Activity Logs
-                        if (techLogs.isNotEmpty)
-                          _section(
-                            'Technician Activity',
-                            Icons.engineering_outlined,
-                            const Color(0xFF10B981),
-                            techLogs.map((t) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            t.action,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'At: ${t.createdAt}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (t.serviceId != null) Text('Svc: ${t.serviceId}'),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                    ],
-                  ),
-                ),
-    );
-  }
-
-  Widget _section(
-      String title, IconData titleIcon, Color color, List<Widget> children) {
+  // ── BENTO SECTION CARD ────────────────────────────────────────────────────
+  Widget _bentoSection(String title, IconData icon, Color accent,
+      List<Widget> children) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+        color: accent.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: _kWhite.withOpacity(0.55),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: _kInk, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: _kInk,
+                    letterSpacing: -0.3)),
+          ]),
+          const SizedBox(height: 14),
+          ...children,
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    titleIcon,
-                    color: color,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1F36),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _row(String label, String value, IconData icon) {
+  // ── BENTO INFO ROW ────────────────────────────────────────────────────────
+  Widget _bentoRow(String label, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 28, height: 28,
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F7FA),
-              borderRadius: BorderRadius.circular(8),
+              color: _kWhite.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: const Color(0xFF6B7280),
-            ),
+            child: Icon(icon, size: 13, color: _kInk2),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
-            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1F36),
-                  ),
-                ),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: _kInk2)),
+                const SizedBox(height: 2),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: _kInk)),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+
+      // ── AppBar — plain back arrow ─────────────────────────────────────────
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: _kInk),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          },
+        ),
+      ),
+
+      body: SafeArea(
+        top: false,
+        child: loading
+
+            // ── LOADING ───────────────────────────────────────────────────
+            ? const Center(child: CircularProgressIndicator())
+
+            : detail == null
+
+                // ── EMPTY ─────────────────────────────────────────────────
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: _kLavender.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Icon(Icons.info_outline,
+                              size: 40, color: _kInk2),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text('No details found',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: _kInk)),
+                        const SizedBox(height: 4),
+                        const Text('Service details are not available',
+                            style:
+                                TextStyle(fontSize: 11, color: _kInk2)),
+                      ],
+                    ),
+                  )
+
+                // ── CONTENT ───────────────────────────────────────────────
+                : ListView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: [
+
+                      // ── Hero Card ───────────────────────────────────────
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: _kDarkPill,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: -30, right: -20,
+                                child: Container(
+                                  width: 140, height: 140,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _kLavender.withOpacity(0.18),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: -20, right: 60,
+                                child: Container(
+                                  width: 90, height: 90,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _kMint.withOpacity(0.15),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(26),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    // Status badge
+                                    Container(
+                                      padding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: _kMint.withOpacity(0.18),
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        border: Border.all(
+                                            color:
+                                                _kMint.withOpacity(0.4)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 6, height: 6,
+                                            decoration:
+                                                const BoxDecoration(
+                                                    color: _kMint,
+                                                    shape:
+                                                        BoxShape.circle),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(detail!.status,
+                                              style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight:
+                                                      FontWeight.w600,
+                                                  color: _kMint)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Text(
+                                      'Service\n#${detail!.serviceNumber}',
+                                      style: const TextStyle(
+                                        fontSize: 34,
+                                        fontWeight: FontWeight.w800,
+                                        color: _kWhite,
+                                        height: 1.1,
+                                        letterSpacing: -1,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Row(children: [
+                                      _HeroPill(
+                                          label:
+                                              'ID #${detail!.serviceId}',
+                                          color: _kPeach),
+                                      const SizedBox(width: 8),
+                                      _HeroPill(
+                                          label: detail!.serviceDate,
+                                          color: _kLavender),
+                                    ]),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ── Sections ────────────────────────────────────────
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+
+                            // Service Info
+                            _bentoSection(
+                              'Service Information',
+                              Icons.info_outline,
+                              _kLavender,
+                              [
+                                _bentoRow('Service ID',
+                                    detail!.serviceId.toString(),
+                                    Icons.confirmation_number_outlined),
+                                _bentoRow('Service Date',
+                                    detail!.serviceDate,
+                                    Icons.calendar_today_outlined),
+                                _bentoRow('Service Number',
+                                    detail!.serviceNumber.toString(),
+                                    Icons.numbers),
+                              ],
+                            ),
+
+                            // Customer Info
+                            _bentoSection(
+                              'Customer Information',
+                              Icons.person_outline,
+                              _kSky,
+                              [
+                                _bentoRow('Customer ID',
+                                    detail!.customerId.toString(),
+                                    Icons.badge_outlined),
+                                _bentoRow('Name', detail!.customerName,
+                                    Icons.account_circle_outlined),
+                                _bentoRow('Phone', detail!.customerPhone,
+                                    Icons.phone_outlined),
+                                _bentoRow('Address',
+                                    detail!.customerAddress,
+                                    Icons.location_on_outlined),
+                              ],
+                            ),
+
+                            // Product Info
+                            _bentoSection(
+                              'Product Information',
+                              Icons.inventory_2_outlined,
+                              _kPeach,
+                              [
+                                _bentoRow('Installation ID',
+                                    detail!.installationId.toString(),
+                                    Icons.settings),
+                                _bentoRow('Model', detail!.productModel,
+                                    Icons.devices_outlined),
+                              ],
+                            ),
+
+                            // Technician Info
+                            _bentoSection(
+                              'Technician Information',
+                              Icons.engineering_outlined,
+                              _kMint,
+                              [
+                                _bentoRow(
+                                    'Technician',
+                                    detail!.technicianName ??
+                                        'Not Assigned',
+                                    Icons.person_outline),
+                                _bentoRow(
+                                    'Phone',
+                                    detail!.technicianPhone ?? '-',
+                                    Icons.phone_outlined),
+                              ],
+                            ),
+
+                            // ── Mark Completed Button ──────────────────
+                            if (canMarkCompleted) ...[
+                              GestureDetector(
+                                onTap: () async {
+                                  await TechnicianServiceLogService
+                                      .updateServiceStatus(
+                                    serviceId: detail!.serviceId,
+                                    status: "COMPLETED",
+                                  );
+                                  _loadDetail();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      SnackBar(
+                                        content: const Row(children: [
+                                          Icon(Icons.check_circle,
+                                              color: Colors.white),
+                                          SizedBox(width: 12),
+                                          Text(
+                                              'Service marked as completed'),
+                                        ]),
+                                        backgroundColor:
+                                            const Color(0xFF10B981),
+                                        behavior:
+                                            SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: _kDarkPill,
+                                    borderRadius:
+                                        BorderRadius.circular(20),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                          Icons.check_circle_outline,
+                                          color: _kMint,
+                                          size: 20),
+                                      SizedBox(width: 10),
+                                      Text('Mark Service Completed',
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w800,
+                                              color: _kWhite,
+                                              letterSpacing: -0.3)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+
+                            // ── Status Change History ──────────────────
+                            _bentoSection(
+                              'Status Change History',
+                              Icons.history,
+                              _kSage,
+                              statusLogs.isEmpty
+                                  ? [
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        child: Text(
+                                            'No status changes recorded.',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: _kInk2)),
+                                      )
+                                    ]
+                                  : statusLogs.map((log) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                            bottom: 10),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: _kWhite
+                                                .withOpacity(0.45),
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment
+                                                    .spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .start,
+                                                  children: [
+                                                    Text(
+                                                      '${log.oldStatus ?? '-'} → ${log.newStatus}',
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight
+                                                                  .w700,
+                                                          fontSize: 12,
+                                                          color: _kInk),
+                                                    ),
+                                                    const SizedBox(
+                                                        height: 3),
+                                                    Text(
+                                                        'At: ${log.changedAt}',
+                                                        style:
+                                                            const TextStyle(
+                                                                fontSize:
+                                                                    10,
+                                                                color:
+                                                                    _kInk2)),
+                                                  ],
+                                                ),
+                                              ),
+                                              if (log.changedBy != null)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: _kLavender
+                                                        .withOpacity(0.3),
+                                                    borderRadius:
+                                                        BorderRadius
+                                                            .circular(8),
+                                                  ),
+                                                  child: Text(
+                                                      'By: ${log.changedBy}',
+                                                      style:
+                                                          const TextStyle(
+                                                              fontSize:
+                                                                  10,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                              color:
+                                                                  _kInk)),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                            ),
+
+                            // ── Technician Activity Logs ───────────────
+                            if (techLogs.isNotEmpty)
+                              _bentoSection(
+                                'Technician Activity',
+                                Icons.engineering_outlined,
+                                _kBlush,
+                                techLogs.map((t) {
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 10),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            _kWhite.withOpacity(0.45),
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment
+                                                .spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment
+                                                      .start,
+                                              children: [
+                                                Text(t.action,
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight
+                                                                .w700,
+                                                        fontSize: 12,
+                                                        color: _kInk)),
+                                                const SizedBox(height: 3),
+                                                Text(
+                                                    'At: ${t.createdAt}',
+                                                    style: const TextStyle(
+                                                        fontSize: 10,
+                                                        color: _kInk2)),
+                                              ],
+                                            ),
+                                          ),
+                                          if (t.serviceId != null)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: _kMint
+                                                    .withOpacity(0.3),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        8),
+                                              ),
+                                              child: Text(
+                                                  'Svc: ${t.serviceId}',
+                                                  style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: _kInk)),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO PILL
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _HeroPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
 
-// ─── COLOUR TOKENS (exact web UI) ────────────────────────
-// bg:#F5F9FF  panel:#FFFFFF  surface:#EAF3FF
-// accent:#2A8FD4  mid:#5AABDE  soft:#C4DFF5
-// text:#0D2A3F  muted:#6B8FA8  hairline:#D6E8F5
+// ─── COLOUR TOKENS — matches AdminDashboard ui_kit ───────────────────────────
+const _kBg       = Color(0xFFF5F5F0);
+const _kDarkPill = Color(0xFF1E1E2E);
+const _kInk      = Color(0xFF1A1A1A);
+const _kInk2     = Color(0xFF666666);
+const _kWhite    = Color(0xFFFFFFFF);
+const _kMint     = Color(0xFF82DCB4);
+const _kLavender = Color(0xFFB4A0FF);
+const _kPeach    = Color(0xFFFFB48C);
+const _kSky      = Color(0xFF8CC8F0);
+const _kSage     = Color(0xFF96C8A0);
 
 class AssignProductRequestScreen extends StatefulWidget {
   final int requestId;
@@ -20,21 +27,13 @@ class _AssignProductRequestScreenState
   final _technicianIdController = TextEditingController();
   bool _isAssigning = false;
 
-  static const _bg       = Color(0xFFF5F9FF);
-  static const _panel    = Color(0xFFFFFFFF);
-  static const _surface  = Color(0xFFEAF3FF);
-  static const _accent   = Color(0xFF2A8FD4);
-  static const _soft     = Color(0xFFC4DFF5);
-  static const _text     = Color(0xFF0D2A3F);
-  static const _muted    = Color(0xFF6B8FA8);
-  static const _hairline = Color(0xFFD6E8F5);
-
   @override
   void dispose() {
     _technicianIdController.dispose();
     super.dispose();
   }
 
+  // ── ALL LOGIC UNCHANGED ───────────────────────────────────────────────────
   Future<void> _assignTechnician() async {
     final techId = _technicianIdController.text.trim();
 
@@ -108,290 +107,330 @@ class _AssignProductRequestScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: _kBg,
 
-      // ── App Bar ───────────────────────────────────────────
+      // ── AppBar — plain back arrow (dashboard style) ───────────────────────
       appBar: AppBar(
-        backgroundColor: _bg,
-        surfaceTintColor: _bg,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: _text,
-        titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, size: 14, color: _text),
+          icon: const Icon(Icons.arrow_back, color: _kInk),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text('ADMIN PANEL',
-                style: TextStyle(
-                  fontSize: 7, fontWeight: FontWeight.w700,
-                  color: _muted, letterSpacing: 2.2, fontFamily: 'monospace',
-                )),
-            Text('Assign Technician',
-                style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w700,
-                  color: _text, letterSpacing: -0.2,
-                )),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: _hairline),
-        ),
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.zero,
           children: [
 
-            // ── Request ID hero banner ──────────────────────
-            // mirrors ShowcaseCard image panel + stats layout
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2A8FD4), Color(0xFF1A6BA8)],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+            // ── 1. Hero Card — dark pill ────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: _kDarkPill,
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                borderRadius: BorderRadius.circular(13),
-                boxShadow: [
-                  BoxShadow(
-                    color: _accent.withOpacity(0.16),
-                    blurRadius: 14, offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Icon box — mirrors admin tile icon style
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.13),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withOpacity(0.16)),
-                    ),
-                    child: const Icon(
-                      Icons.assignment_turned_in_rounded,
-                      color: Colors.white, size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Eyebrow — mirrors "PURIFICATION SYSTEM" label
-                      const Text('PRODUCT REQUEST',
-                          style: TextStyle(
-                            fontSize: 7, fontWeight: FontWeight.w700,
-                            color: Colors.white60, letterSpacing: 2.4,
-                            fontFamily: 'monospace',
-                          )),
-                      const SizedBox(height: 3),
-                      Text('#${widget.requestId}',
-                          style: const TextStyle(
-                            fontSize: 26, fontWeight: FontWeight.w700,
-                            color: Colors.white, letterSpacing: -1.0,
-                          )),
-                    ],
-                  ),
-                  const Spacer(),
-                  // Status pill — mirrors web stats "Grade / Pro" chip
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(7),
-                      border: Border.all(color: Colors.white.withOpacity(0.18)),
-                    ),
-                    child: const Text('OPEN',
-                        style: TextStyle(
-                          fontSize: 7, fontWeight: FontWeight.w700,
-                          color: Colors.white, letterSpacing: 1.8,
-                          fontFamily: 'monospace',
-                        )),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // ── Section eyebrow ─────────────────────────────
-            const Text('TECHNICIAN ASSIGNMENT',
-                style: TextStyle(
-                  fontSize: 7, fontWeight: FontWeight.w700,
-                  color: _muted, letterSpacing: 2.4, fontFamily: 'monospace',
-                )),
-            const SizedBox(height: 4),
-            const Text(
-              'Enter the technician ID to assign them to this request',
-              style: TextStyle(
-                fontSize: 11, color: _muted,
-                fontFamily: 'monospace', height: 1.5,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ── Input card ──────────────────────────────────
-            // mirrors LoginScreen input card style
-            Container(
-              decoration: BoxDecoration(
-                color: _panel,
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: _hairline),
-                boxShadow: [
-                  BoxShadow(
-                    color: _accent.withOpacity(0.04),
-                    blurRadius: 8, offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Field label row — mirrors LoginScreen "MOBILE NUMBER"
-                  Row(children: [
-                    Container(
-                      width: 30, height: 30,
-                      decoration: BoxDecoration(
-                        color: _surface,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: _soft),
-                      ),
-                      child: const Icon(
-                        Icons.person_outline_rounded,
-                        color: _accent, size: 15,
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    const Text('TECHNICIAN ID',
-                        style: TextStyle(
-                          fontSize: 8, fontWeight: FontWeight.w700,
-                          color: _muted, letterSpacing: 1.8,
-                          fontFamily: 'monospace',
-                        )),
-                  ]),
-                  const SizedBox(height: 9),
-
-                  // Text field — mirrors _AquaTextField / _AquaField style
-                  TextField(
-                    controller: _technicianIdController,
-                    keyboardType: TextInputType.number,
-                    enabled: !_isAssigning,
-                    style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: _text,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Enter technician ID (e.g. 12345)',
-                      hintStyle: const TextStyle(
-                        fontSize: 11, color: _muted, fontFamily: 'monospace',
-                      ),
-                      filled: true,
-                      fillColor: _surface,
-                      prefixIcon: const Icon(
-                        Icons.badge_outlined, color: _accent, size: 16,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: _hairline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF5AABDE), width: 1.5,
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    // Decorative circles
+                    Positioned(
+                      top: -30, right: -20,
+                      child: Container(
+                        width: 140, height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _kLavender.withOpacity(0.18),
                         ),
                       ),
-                      disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: _hairline),
-                      ),
-                      border: InputBorder.none,
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ── Info hint box ───────────────────────────────
-            // mirrors ProfileTab hint row / LoginScreen hint box
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-              decoration: BoxDecoration(
-                color: _surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _hairline),
-              ),
-              child: const Row(children: [
-                Icon(Icons.info_outline_rounded, size: 12, color: _muted),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Make sure the technician ID is valid before assigning',
-                    style: TextStyle(
-                      fontSize: 10, color: _muted,
-                      fontFamily: 'monospace', letterSpacing: 0.2, height: 1.4,
-                    ),
-                  ),
-                ),
-              ]),
-            ),
-
-            const SizedBox(height: 14),
-
-            // ── Assign button ───────────────────────────────
-            // mirrors catalog / login CTA button style
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton(
-                onPressed: _isAssigning ? null : _assignTechnician,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _accent,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: _soft,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isAssigning
-                    ? const SizedBox(
-                        height: 18, width: 18,
-                        child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2.5,
+                    Positioned(
+                      bottom: -20, right: 60,
+                      child: Container(
+                        width: 90, height: 90,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _kMint.withOpacity(0.15),
                         ),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(26),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.person_add_rounded, size: 15),
-                          SizedBox(width: 8),
-                          Text('ASSIGN TECHNICIAN',
-                              style: TextStyle(
-                                fontSize: 10, fontWeight: FontWeight.w700,
-                                letterSpacing: 1.8, fontFamily: 'monospace',
-                              )),
+                          // Mint badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _kMint.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(
+                                  color: _kMint.withOpacity(0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6, height: 6,
+                                  decoration: const BoxDecoration(
+                                      color: _kMint,
+                                      shape: BoxShape.circle),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text('OPEN',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: _kMint)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          // Title
+                          const Text(
+                            'Assign\nTechnician',
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              color: _kWhite,
+                              height: 1.1,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                          const Spacer(),
+                          // Pills
+                          Row(
+                            children: [
+                              _HeroPill(
+                                  label:
+                                      'Request #${widget.requestId}',
+                                  color: _kPeach),
+                              const SizedBox(width: 8),
+                              _HeroPill(
+                                  label: 'Product',
+                                  color: _kLavender),
+                            ],
+                          ),
                         ],
                       ),
+                    ),
+                  ],
+                ),
               ),
             ),
+
+            const SizedBox(height: 20),
+
+            // ── 2. Section Title ────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text('Technician Assignment',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: _kInk,
+                          letterSpacing: -0.5)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Enter the technician ID to assign them to this request',
+                style: TextStyle(fontSize: 11, color: _kInk2, height: 1.5),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── 3. Input bento card ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: _kLavender.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Label row
+                    Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: _kWhite.withOpacity(0.55),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.person_outline_rounded,
+                            color: _kInk, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text('TECHNICIAN ID',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: _kInk,
+                              letterSpacing: 0.5)),
+                    ]),
+                    const SizedBox(height: 14),
+
+                    // Text field — dashboard-style
+                    TextField(
+                      controller: _technicianIdController,
+                      keyboardType: TextInputType.number,
+                      enabled: !_isAssigning,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _kInk),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 12345',
+                        hintStyle: const TextStyle(
+                            fontSize: 12, color: _kInk2),
+                        filled: true,
+                        fillColor: _kWhite.withOpacity(0.6),
+                        prefixIcon: const Icon(Icons.badge_outlined,
+                            color: _kInk2, size: 18),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                              color: _kWhite.withOpacity(0.0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                              color: _kLavender, width: 1.5),
+                        ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                              color: _kWhite.withOpacity(0.0)),
+                        ),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── 4. Info hint bento ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _kSky.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(children: [
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: _kWhite.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.info_outline_rounded,
+                        size: 16, color: _kInk2),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Make sure the technician ID is valid before assigning',
+                      style: TextStyle(
+                          fontSize: 11, color: _kInk2, height: 1.4),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── 5. Assign button — bento style ──────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GestureDetector(
+                onTap: _isAssigning ? null : _assignTechnician,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 140),
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: _isAssigning
+                        ? _kSage.withOpacity(0.4)
+                        : _kDarkPill,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: _isAssigning
+                        ? const SizedBox(
+                            height: 20, width: 20,
+                            child: CircularProgressIndicator(
+                                color: _kWhite, strokeWidth: 2.5),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.person_add_rounded,
+                                  color: _kWhite, size: 18),
+                              SizedBox(width: 10),
+                              Text('Assign Technician',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: _kWhite,
+                                      letterSpacing: -0.3)),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 28),
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO PILL
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _HeroPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }

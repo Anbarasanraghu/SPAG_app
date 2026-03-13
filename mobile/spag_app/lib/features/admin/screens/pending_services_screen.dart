@@ -2,12 +2,34 @@ import 'package:flutter/material.dart';
 import '../models/pending_service.dart';
 import '../services/pending_service_service.dart';
 
+// ─── COLOUR TOKENS — matches AdminDashboard ui_kit ───────────────────────────
+const _kBg       = Color(0xFFF5F5F0);
+const _kDarkPill = Color(0xFF1E1E2E);
+const _kInk      = Color(0xFF1A1A1A);
+const _kInk2     = Color(0xFF666666);
+const _kWhite    = Color(0xFFFFFFFF);
+const _kMint     = Color(0xFF82DCB4);
+const _kLavender = Color(0xFFB4A0FF);
+const _kPeach    = Color(0xFFFFB48C);
+const _kBlush    = Color(0xFFFFB4BE);
+const _kSage     = Color(0xFF96C8A0);
+const _kSky      = Color(0xFF8CC8F0);
+
+// Six pastel card colours cycling across service cards
+const _cardColors = [
+  Color(0xFFB4A0FF), // lavender
+  Color(0xFF82DCB4), // mint
+  Color(0xFF8CC8F0), // sky
+  Color(0xFFFFB48C), // peach
+  Color(0xFFFFB4BE), // blush
+  Color(0xFF96C8A0), // sage
+];
+
 class PendingServicesScreen extends StatefulWidget {
   const PendingServicesScreen({super.key});
 
   @override
-  State<PendingServicesScreen> createState() =>
-      _PendingServicesScreenState();
+  State<PendingServicesScreen> createState() => _PendingServicesScreenState();
 }
 
 class _PendingServicesScreenState extends State<PendingServicesScreen> {
@@ -32,7 +54,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
     }
   }
 
-  // ✅ THIS IS THE FUNCTION THAT MAKES ASSIGN WORK
+  // ── ASSIGN DIALOG — logic completely unchanged ────────────────────────────
   Future<void> _showAssignDialog(int serviceId) async {
     final technicianIdController = TextEditingController();
     bool isAssigning = false;
@@ -42,57 +64,80 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
+            backgroundColor: _kBg,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(28),
             ),
             title: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: _kLavender.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(
-                    Icons.person_add,
-                    color: Color(0xFF6366F1),
-                  ),
+                  child: const Icon(Icons.person_add, color: _kInk, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Assign Technician',
-                  style: TextStyle(fontSize: 18),
-                ),
+                const Text('Assign Technician',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _kInk)),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Service #$serviceId',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _kPeach.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(100),
                   ),
+                  child: Text('Service #$serviceId',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _kInk2)),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: technicianIdController,
                   keyboardType: TextInputType.number,
                   enabled: !isAssigning,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: _kInk),
                   decoration: InputDecoration(
-                    labelText: 'Technician ID',
                     hintText: 'Enter technician ID',
-                    prefixIcon: const Icon(
-                      Icons.badge_outlined,
-                      color: Color(0xFF6366F1),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    hintStyle:
+                        const TextStyle(fontSize: 12, color: _kInk2),
                     filled: true,
-                    fillColor: const Color(0xFFF5F7FA),
+                    fillColor: _kLavender.withOpacity(0.18),
+                    prefixIcon: const Icon(Icons.badge_outlined,
+                        color: _kInk2, size: 18),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 14),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          BorderSide(color: _kLavender.withOpacity(0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: _kLavender, width: 1.5),
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          BorderSide(color: _kLavender.withOpacity(0.1)),
+                    ),
+                    border: InputBorder.none,
                   ),
                 ),
               ],
@@ -102,37 +147,31 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                 onPressed: isAssigning
                     ? null
                     : () => Navigator.pop(dialogContext),
-                child: const Text('Cancel'),
+                child: const Text('Cancel',
+                    style: TextStyle(color: _kInk2)),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: isAssigning
+              GestureDetector(
+                onTap: isAssigning
                     ? null
                     : () async {
-                        final techId = technicianIdController.text.trim();
+                        final techId =
+                            technicianIdController.text.trim();
 
                         if (techId.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: const Row(
-                                children: [
-                                  Icon(Icons.warning_amber_rounded,
-                                      color: Colors.white),
-                                  SizedBox(width: 12),
-                                  Text('Please enter technician ID'),
-                                ],
-                              ),
-                              backgroundColor: const Color(0xFFF59E0B),
+                              content: const Row(children: [
+                                Icon(Icons.warning_amber_rounded,
+                                    color: Colors.white),
+                                SizedBox(width: 12),
+                                Text('Please enter technician ID'),
+                              ]),
+                              backgroundColor:
+                                  const Color(0xFFF59E0B),
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                borderRadius:
+                                    BorderRadius.circular(12)),
                             ),
                           );
                           return;
@@ -141,7 +180,6 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                         setDialogState(() => isAssigning = true);
 
                         try {
-                          // ✅ THIS CALLS YOUR SERVICE
                           await PendingServiceService.assignTechnician(
                             serviceId: serviceId,
                             technicianId: int.parse(techId),
@@ -151,63 +189,69 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: const Row(
-                                children: [
-                                  Icon(Icons.check_circle,
-                                      color: Colors.white),
-                                  SizedBox(width: 12),
-                                  Text('Technician assigned successfully ✅'),
-                                ],
-                              ),
-                              backgroundColor: const Color(0xFF10B981),
+                              content: const Row(children: [
+                                Icon(Icons.check_circle,
+                                    color: Colors.white),
+                                SizedBox(width: 12),
+                                Text('Technician assigned successfully ✅'),
+                              ]),
+                              backgroundColor:
+                                  const Color(0xFF10B981),
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                borderRadius:
+                                    BorderRadius.circular(12)),
                             ),
                           );
 
                           Navigator.pop(dialogContext);
-
-                          // ✅ REFRESH THE LIST
                           _load();
                         } catch (e) {
                           if (!context.mounted) return;
-
-                          final message = e.toString().replaceFirst('Exception: ', '');
-
+                          final message = e
+                              .toString()
+                              .replaceFirst('Exception: ', '');
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.error_outline,
-                                      color: Colors.white),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                      child: Text('Failed: $message')),
-                                ],
-                              ),
-                              backgroundColor: const Color(0xFFEF4444),
+                              content: Row(children: [
+                                const Icon(Icons.error_outline,
+                                    color: Colors.white),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                    child: Text('Failed: $message')),
+                              ]),
+                              backgroundColor:
+                                  const Color(0xFFEF4444),
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                borderRadius:
+                                    BorderRadius.circular(12)),
                             ),
                           );
                         } finally {
                           setDialogState(() => isAssigning = false);
                         }
                       },
-                child: isAssigning
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text('Assign'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isAssigning
+                        ? _kInk2.withOpacity(0.2)
+                        : _kDarkPill,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: isAssigning
+                      ? const SizedBox(
+                          height: 18, width: 18,
+                          child: CircularProgressIndicator(
+                              color: _kWhite, strokeWidth: 2))
+                      : const Text('Assign',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: _kWhite)),
+                ),
               ),
             ],
           );
@@ -216,6 +260,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
     );
   }
 
+  // ── STATUS HELPERS — logic unchanged ─────────────────────────────────────
   Color _statusColor(String status) {
     switch (status.toUpperCase()) {
       case "ASSIGNED":
@@ -234,15 +279,15 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
   Color _statusBgColor(String status) {
     switch (status.toUpperCase()) {
       case "ASSIGNED":
-        return const Color(0xFF3B82F6).withOpacity(0.1);
+        return const Color(0xFF3B82F6).withOpacity(0.15);
       case "IN_PROGRESS":
       case "IN PROGRESS":
-        return const Color(0xFFF59E0B).withOpacity(0.1);
+        return const Color(0xFFF59E0B).withOpacity(0.15);
       case "COMPLETED":
-        return const Color(0xFF10B981).withOpacity(0.1);
+        return const Color(0xFF10B981).withOpacity(0.15);
       case "PENDING":
       default:
-        return const Color(0xFFF59E0B).withOpacity(0.1);
+        return const Color(0xFFF59E0B).withOpacity(0.15);
     }
   }
 
@@ -261,429 +306,477 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
     }
   }
 
+  Color _cardColor(int i) => _cardColors[i % _cardColors.length];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: _kBg,
+
+      // ── AppBar — plain back arrow (dashboard style) ───────────────────────
       appBar: AppBar(
-        title: const Text(
-          "Pending Services",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1F36),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
-              onPressed: () {
-                  if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              },
+          icon: const Icon(Icons.arrow_back, color: _kInk),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          },
         ),
       ),
-      body: loading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    "Loading services...",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () async => _load(),
-              child: services.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+
+      body: SafeArea(
+        top: false,
+        child: loading
+
+            // ── LOADING ───────────────────────────────────────────────────
+            ? const Center(child: CircularProgressIndicator())
+
+            : RefreshIndicator(
+                onRefresh: () async => _load(),
+                child: services.isEmpty
+
+                    // ── EMPTY ─────────────────────────────────────────────
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(22),
+                              decoration: BoxDecoration(
+                                color: _kPeach.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: const Icon(
+                                  Icons.pending_actions_outlined,
+                                  size: 40,
+                                  color: _kInk2),
                             ),
-                            child: const Icon(
-                              Icons.pending_actions_outlined,
-                              size: 56,
-                              color: Color(0xFF6B7280),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            "No pending services",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1F36),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "All services are up to date",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF6B7280),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                  children: [
-                    // Stats Header
-                    Container(
-                      margin: const EdgeInsets.all(20),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFF59E0B).withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.pending_actions,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Pending Services",
+                            const SizedBox(height: 14),
+                            const Text('No pending services',
                                 style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "${services.length}",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: _kInk)),
+                            const SizedBox(height: 4),
+                            const Text('All services are up to date',
+                                style: TextStyle(
+                                    fontSize: 11, color: _kInk2)),
+                          ],
+                        ),
+                      )
 
-                    // Services List
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: services.length,
-                        itemBuilder: (context, index) {
-                          final s = services[index];
+                    // ── LIST ──────────────────────────────────────────────
+                    : ListView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        children: [
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          // ── Hero Card ─────────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: _kDarkPill,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
                                 children: [
-                                  // Header Row
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF8B5CF6)
-                                              .withOpacity(0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(
-                                          Icons.person_outline,
-                                          color: Color(0xFF8B5CF6),
-                                          size: 24,
-                                        ),
+                                  Positioned(
+                                    top: -30, right: -20,
+                                    child: Container(
+                                      width: 140, height: 140,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _kLavender.withOpacity(0.18),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              s.customerName,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                                color: Color(0xFF1A1F36),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              "Service #${s.serviceNumber}",
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _statusBgColor(s.status),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              _statusIcon(s.status),
-                                              size: 14,
-                                              color: _statusColor(s.status),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              s.status,
-                                              style: TextStyle(
-                                                color: _statusColor(s.status),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // Service Date
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F7FA),
-                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Row(
+                                  ),
+                                  Positioned(
+                                    bottom: -20, right: 60,
+                                    child: Container(
+                                      width: 90, height: 90,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _kMint.withOpacity(0.15),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(26),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
+                                        // Mint badge
                                         Container(
-                                          width: 32,
-                                          height: 32,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 5),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF10B981)
-                                                .withOpacity(0.1),
+                                            color: _kMint.withOpacity(0.18),
                                             borderRadius:
-                                                BorderRadius.circular(8),
+                                                BorderRadius.circular(100),
+                                            border: Border.all(
+                                                color:
+                                                    _kMint.withOpacity(0.4)),
                                           ),
-                                          child: const Icon(
-                                            Icons.calendar_today_outlined,
-                                            size: 16,
-                                            color: Color(0xFF10B981),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 6, height: 6,
+                                                decoration: const BoxDecoration(
+                                                    color: _kMint,
+                                                    shape: BoxShape.circle),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                  '${services.length} Pending',
+                                                  style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: _kMint)),
+                                            ],
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                        const SizedBox(height: 14),
+                                        const Text(
+                                          'Pending\nServices',
+                                          style: TextStyle(
+                                            fontSize: 34,
+                                            fontWeight: FontWeight.w800,
+                                            color: _kWhite,
+                                            height: 1.1,
+                                            letterSpacing: -1,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Row(
                                           children: [
-                                            Text(
-                                              "Service Date",
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              s.serviceDate,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF1A1F36),
-                                              ),
-                                            ),
+                                            _HeroPill(
+                                                label:
+                                                    '${services.length} Services',
+                                                color: _kPeach),
+                                            const SizedBox(width: 8),
+                                            _HeroPill(
+                                                label: 'Review & Manage',
+                                                color: _kLavender),
                                           ],
                                         ),
                                       ],
                                     ),
                                   ),
-
-                                  // Technician Info or Assign Button
-                                  if (s.technicianName != null) ...[
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF3B82F6)
-                                            .withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: const Color(0xFF3B82F6)
-                                              .withOpacity(0.2),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 32,
-                                            height: 32,
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF3B82F6)
-                                                  .withOpacity(0.2),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: const Icon(
-                                              Icons.engineering,
-                                              size: 16,
-                                              color: Color(0xFF3B82F6),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "Assigned Technician",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                s.technicianName!,
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF1A1F36),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ] else ...[
-                                    const SizedBox(height: 16),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton(
-                                        onPressed: () => _showAssignDialog(s.serviceId),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF6366F1),
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 14),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          elevation: 0,
-                                        ),
-                                        child: const Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.person_add_outlined,
-                                                size: 20),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              "Assign Technician",
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),
-                          );
-                        },
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // ── Section Title ──────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Service Requests',
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                        color: _kInk,
+                                        letterSpacing: -0.5)),
+                                Text('${services.length} total',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: _kInk2,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ── Service Cards ──────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: List.generate(services.length, (i) {
+                                final s = services[i];
+                                final color = _cardColor(i);
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 12),
+                                  child: _ServiceCard(
+                                    service: s,
+                                    color: color,
+                                    statusColor: _statusColor(s.status),
+                                    statusBgColor: _statusBgColor(s.status),
+                                    statusIcon: _statusIcon(s.status),
+                                    onAssign: () =>
+                                        _showAssignDialog(s.serviceId),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+                        ],
                       ),
+              ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVICE CARD — pastel bento style
+// ─────────────────────────────────────────────────────────────────────────────
+class _ServiceCard extends StatefulWidget {
+  final PendingService service;
+  final Color color;
+  final Color statusColor;
+  final Color statusBgColor;
+  final IconData statusIcon;
+  final VoidCallback onAssign;
+
+  const _ServiceCard({
+    required this.service,
+    required this.color,
+    required this.statusColor,
+    required this.statusBgColor,
+    required this.statusIcon,
+    required this.onAssign,
+  });
+
+  @override
+  State<_ServiceCard> createState() => _ServiceCardState();
+}
+
+class _ServiceCardState extends State<_ServiceCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.service;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        transform: Matrix4.identity()..scale(_pressed ? 0.98 : 1.0),
+        transformAlignment: Alignment.center,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: widget.color.withOpacity(0.38),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // ── Header Row ───────────────────────────────────────────────
+            Row(
+              children: [
+                // Avatar box
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFFFF).withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.person_outline,
+                        color: _kInk, size: 22),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Name + service number
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(s.customerName,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: _kInk,
+                              letterSpacing: -0.3)),
+                      const SizedBox(height: 3),
+                      Text('Service #${s.serviceNumber}',
+                          style: const TextStyle(
+                              fontSize: 11, color: _kInk2)),
+                    ],
+                  ),
+                ),
+                // Status chip
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: widget.statusBgColor,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(widget.statusIcon,
+                          size: 11, color: widget.statusColor),
+                      const SizedBox(width: 4),
+                      Text(s.status,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: widget.statusColor)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Service Date bento ───────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 11),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFFFF).withOpacity(0.45),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 30, height: 30,
+                    decoration: BoxDecoration(
+                      color: _kSage.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.calendar_today_outlined,
+                        size: 14, color: _kInk),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Service Date',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: _kInk2)),
+                      const SizedBox(height: 2),
+                      Text(s.serviceDate,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: _kInk)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Technician or Assign button ──────────────────────────────
+            if (s.technicianName != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 11),
+                decoration: BoxDecoration(
+                  color: _kSky.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 30, height: 30,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF).withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.engineering,
+                          size: 14, color: _kInk),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Assigned Technician',
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: _kInk2)),
+                        const SizedBox(height: 2),
+                        Text(s.technicianName!,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: _kInk)),
+                      ],
                     ),
                   ],
                 ),
-            ),
+              ),
+            ] else ...[
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: widget.onAssign,
+                child: Container(
+                  width: double.infinity,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _kDarkPill,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person_add_outlined,
+                          color: _kWhite, size: 17),
+                      SizedBox(width: 8),
+                      Text('Assign Technician',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: _kWhite,
+                              letterSpacing: -0.2)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO PILL
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _HeroPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }
