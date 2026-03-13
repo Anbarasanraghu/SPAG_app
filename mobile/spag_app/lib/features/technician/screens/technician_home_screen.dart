@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import '../models/technician_service.dart';
 import '../services/technician_api.dart';
+import '../../auth/screens/login_screen.dart';
+import '../../customer/screens/customer_main_screen.dart';
 import 'installation_jobs_screen.dart';
 
+// ─── PALETTE ─────────────────────────────────────────────────────────────────
+const _bg       = Color(0xFFF5F4F0);
+const _white    = Color(0xFFFFFFFF);
+const _ink      = Color(0xFF111110);
+const _ink2     = Color(0xFF8A8880);
+const _darkPill = Color(0xFF1A1A18);
+const _lavender = Color(0xFFD5CCFF);
+const _mint     = Color(0xFFBDF0D8);
+const _blush    = Color(0xFFF5C8D4);
+const _sky      = Color(0xFFBFE0F5);
+const _peach    = Color(0xFFF8DBBF);
+const _sage     = Color(0xFFC8DFC0);
+
+// ─────────────────────────────────────────────────────────────────────────────
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
 
@@ -18,26 +35,24 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen>
   late AnimationController _refreshController;
   late Animation<double> _headerAnimation;
 
+
   @override
   void initState() {
     super.initState();
     _servicesFuture = TechnicianApi.getUpcomingServices();
-    
+
     _headerController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
     _refreshController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _headerAnimation = CurvedAnimation(
       parent: _headerController,
       curve: Curves.easeOutCubic,
     );
-
     _headerController.forward();
   }
 
@@ -56,30 +71,35 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen>
   }
 
   Future<void> _complete(TechnicianService s) async {
-    // Show confirmation dialog first
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => _buildConfirmDialog(s),
+      builder: (context) => _ConfirmDialog(service: s),
     );
 
     if (confirm == true) {
-      // Show loading
       if (!mounted) return;
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Completing service...'),
-                ],
-              ),
+        builder: (_) => Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 48),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: _bg,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: _darkPill, strokeWidth: 2.5),
+                SizedBox(height: 16),
+                Text('Completing service…',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _ink)),
+              ],
             ),
           ),
         ),
@@ -90,783 +110,45 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen>
           serviceId: s.serviceId,
           customerId: s.customerId,
         );
-        
         if (!mounted) return;
-        Navigator.pop(context); // Close loading dialog
-        
-        // Show success message
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Text('Service ${s.serviceNumber} completed!'),
-              ],
-            ),
-            backgroundColor: const Color(0xFF10B981),
+            content: Row(children: [
+              const Text('✅', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 10),
+              Text('Service ${s.serviceNumber} completed!',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+            ]),
+            backgroundColor: _darkPill,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.all(16),
           ),
         );
-        
         _refresh();
       } catch (e) {
         if (!mounted) return;
-        Navigator.pop(context); // Close loading dialog
-        
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 12),
-                const Expanded(child: Text('Failed to complete service')),
-              ],
-            ),
-            backgroundColor: const Color(0xFFEF4444),
+            content: Row(children: [
+              const Text('❌', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 10),
+              const Expanded(
+                  child: Text('Failed to complete service',
+                      style: TextStyle(fontWeight: FontWeight.w600))),
+            ]),
+            backgroundColor: const Color(0xFFB03050),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
     }
-  }
-
-  Widget _buildConfirmDialog(TechnicianService s) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle_outline,
-                color: Color(0xFFF59E0B),
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Complete Service?',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Mark Service ${s.serviceNumber} as completed?',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      backgroundColor: const Color(0xFF10B981),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Confirm'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildAnimatedAppBar(),
-          SliverToBoxAdapter(
-            child: FutureBuilder<List<TechnicianService>>(
-              future: _servicesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _buildLoadingState();
-                }
-
-                if (snapshot.hasError) {
-                  return _buildErrorState(snapshot.error.toString());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                final services = snapshot.data!;
-                return _buildServicesList(services);
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: _buildRefreshButton(),
-    );
-  }
-
-  Widget _buildAnimatedAppBar() {
-    return SliverAppBar(
-      expandedHeight: 200,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: const Color(0xFF0EA5E9),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          children: [
-            // Animated gradient background
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF0EA5E9),
-                    Color(0xFF06B6D4),
-                  ],
-                ),
-              ),
-            ),
-            // Animated circles
-            Positioned(
-              top: -50,
-              right: -50,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(seconds: 3),
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: 0.8 + (math.sin(value * math.pi * 2) * 0.1),
-                    child: Container(
-                      width: 180,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Positioned(
-              bottom: -30,
-              left: -30,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(seconds: 4),
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: 0.8 + (math.cos(value * math.pi * 2) * 0.1),
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.08),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            // Content
-            SafeArea(
-              child: FadeTransition(
-                opacity: _headerAnimation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, -0.5),
-                    end: Offset.zero,
-                  ).animate(_headerAnimation),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.engineering,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome Back',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Technician Portal',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return SizedBox(
-      height: 400,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 1500),
-              builder: (context, value, child) {
-                return Transform.rotate(
-                  angle: value * 2 * math.pi,
-                  child: Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
-                      ),
-                      borderRadius: BorderRadius.circular(35),
-                    ),
-                    child: const Icon(
-                      Icons.engineering,
-                      color: Colors.white,
-                      size: 35,
-                    ),
-                  ),
-                );
-              },
-              onEnd: () {
-                setState(() {});
-              },
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Loading services...',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: Column(
-          children: [
-            // All Caught Up Section
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOut,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: Opacity(
-                    opacity: value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF0EA5E9).withOpacity(0.1),
-                          const Color(0xFF06B6D4).withOpacity(0.05),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.inbox_outlined,
-                      color: Color(0xFF0EA5E9),
-                      size: 64,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'All Caught Up!',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'No upcoming services at the moment.\nEnjoy your break!',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 15,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            // Installation Requests Card
-            _buildInstallationRequestsCard(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInstallationRequestsCard() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 1000),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const InstallationJobsScreen(),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            child: Row(
-              children: [
-                // Leading Icon
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.inventory_2,
-                    color: Color(0xFF0EA5E9),
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Title and Subtitle
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Installation Requests',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'View assigned installation jobs',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Trailing Arrow Icon
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Color(0xFF0EA5E9),
-                    size: 18,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String error) {
-    return SizedBox(
-      height: 400,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFFEF4444).withOpacity(0.1),
-                      const Color(0xFFDC2626).withOpacity(0.05),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.error_outline,
-                  color: Color(0xFFEF4444),
-                  size: 64,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Error Loading Services',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _refresh,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0EA5E9),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServicesList(List<TechnicianService> services) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Upcoming Services',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0EA5E9).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${services.length} ${services.length == 1 ? 'Service' : 'Services'}',
-                  style: const TextStyle(
-                    color: Color(0xFF0EA5E9),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Installation Requests card is shown always (even when services exist)
-          _buildInstallationRequestsCard(),
-          const SizedBox(height: 12),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: services.length,
-            itemBuilder: (context, index) {
-              final s = services[index];
-              return _buildServiceCard(s, index);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildServiceCard(TechnicianService s, int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 100)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(50 * (1 - value), 0),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0EA5E9).withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => _showCustomerDetails(s),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.build_circle,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Service ${s.serviceNumber}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.person_outline,
-                                  size: 14,
-                                  color: Color(0xFF6B7280),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'ID: ${s.customerId}',
-                                  style: const TextStyle(
-                                    color: Color(0xFF6B7280),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.grey.shade400,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today,
-                          size: 16,
-                          color: Color(0xFF0EA5E9),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          s.serviceDate,
-                          style: const TextStyle(
-                            color: Color(0xFF1A1A1A),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _complete(s),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_outline, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Mark as Complete',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _showCustomerDetails(TechnicianService s) async {
@@ -878,227 +160,1023 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen>
         future: TechnicianApi.getCustomerInfo(s.customerId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildBottomSheetLoading();
+            return _BottomSheetLoading();
           }
-
           if (!snapshot.hasData) {
-            return _buildBottomSheetError();
+            return const _BottomSheetError();
           }
-
-          final customer = snapshot.data!;
-          return _buildCustomerBottomSheet(customer, s);
+          return _CustomerBottomSheet(customer: snapshot.data!, service: s);
         },
       ),
     );
   }
 
-  Widget _buildBottomSheetLoading() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ));
+
+    final isWide = MediaQuery.of(context).size.width >= 640;
+
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: _ink),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const CustomerMainScreen()),
+            );
+          },
+        ),
+        title: const Text(
+          'Technician Portal',
+          style: TextStyle(
+            color: _ink,
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            letterSpacing: -0.5,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: _ink),
       ),
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 1000),
-            builder: (context, value, child) {
-              return Transform.rotate(
-                angle: value * 2 * math.pi,
-                child: const CircularProgressIndicator(
-                  color: Color(0xFF0EA5E9),
-                ),
-              );
-            },
-            onEnd: () {
-              if (mounted) setState(() {});
-            },
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Loading customer details...',
-            style: TextStyle(color: Color(0xFF6B7280)),
-          ),
-        ],
+      body: SafeArea(
+        child: isWide
+            ? _DesktopLayout(
+                servicesFuture: _servicesFuture,
+                headerAnimation: _headerAnimation,
+                refreshController: _refreshController,
+                onRefresh: _refresh,
+                onComplete: _complete,
+                onShowDetails: _showCustomerDetails,
+              )
+            : _MobileLayout(
+                servicesFuture: _servicesFuture,
+                headerAnimation: _headerAnimation,
+                refreshController: _refreshController,
+                onRefresh: _refresh,
+                onComplete: _complete,
+                onShowDetails: _showCustomerDetails,
+              ),
       ),
     );
   }
+}
 
-  Widget _buildBottomSheetError() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red.shade400,
-            size: 48,
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE LAYOUT
+// ─────────────────────────────────────────────────────────────────────────────
+class _MobileLayout extends StatelessWidget {
+  final Future<List<TechnicianService>> servicesFuture;
+  final Animation<double> headerAnimation;
+  final AnimationController refreshController;
+  final VoidCallback onRefresh;
+  final Future<void> Function(TechnicianService) onComplete;
+  final Future<void> Function(TechnicianService) onShowDetails;
+
+  const _MobileLayout({
+    required this.servicesFuture,
+    required this.headerAnimation,
+    required this.refreshController,
+    required this.onRefresh,
+    required this.onComplete,
+    required this.onShowDetails,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        RefreshIndicator(
+          color: _darkPill,
+          backgroundColor: _white,
+          onRefresh: () async => onRefresh(),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverToBoxAdapter(
+                child: FadeTransition(
+                  opacity: headerAnimation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                            begin: const Offset(0, -0.2), end: Offset.zero)
+                        .animate(headerAnimation),
+                    child: _HeroHeader(),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: FutureBuilder<List<TechnicianService>>(
+                  future: servicesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const _LoadingState();
+                    }
+                    if (snapshot.hasError) {
+                      return _ErrorState(
+                          error: snapshot.error.toString(),
+                          onRetry: onRefresh);
+                    }
+                    final services = snapshot.data ?? [];
+                    return _ServicesList(
+                      services: services,
+                      onComplete: onComplete,
+                      onShowDetails: onShowDetails,
+                      isWide: false,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Failed to load customer info',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+        ),
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: _RefreshFab(
+              controller: refreshController, onTap: onRefresh),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESKTOP LAYOUT
+// ─────────────────────────────────────────────────────────────────────────────
+class _DesktopLayout extends StatelessWidget {
+  final Future<List<TechnicianService>> servicesFuture;
+  final Animation<double> headerAnimation;
+  final AnimationController refreshController;
+  final VoidCallback onRefresh;
+  final Future<void> Function(TechnicianService) onComplete;
+  final Future<void> Function(TechnicianService) onShowDetails;
+
+  const _DesktopLayout({
+    required this.servicesFuture,
+    required this.headerAnimation,
+    required this.refreshController,
+    required this.onRefresh,
+    required this.onComplete,
+    required this.onShowDetails,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 300,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 10, 20),
+            child: Column(
+              children: [
+                FadeTransition(
+                  opacity: headerAnimation,
+                  child: _HeroHeader(tall: true),
+                ),
+                const SizedBox(height: 14),
+                _InstallationCard(),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            color: _darkPill,
+            backgroundColor: _white,
+            onRefresh: () async => onRefresh(),
+            child: FutureBuilder<List<TechnicianService>>(
+              future: servicesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const _LoadingState();
+                }
+                if (snapshot.hasError) {
+                  return _ErrorState(
+                      error: snapshot.error.toString(), onRetry: onRefresh);
+                }
+                final services = snapshot.data ?? [];
+                return _ServicesList(
+                  services: services,
+                  onComplete: onComplete,
+                  onShowDetails: onShowDetails,
+                  isWide: true,
+                  hideInstallationCard: true,
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
 
-  Widget _buildCustomerBottomSheet(dynamic customer, TechnicianService s) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 100 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO HEADER
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroHeader extends StatelessWidget {
+  final bool tall;
+  const _HeroHeader({this.tall = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: tall
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: _darkPill,
+          borderRadius: BorderRadius.circular(28),
         ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            Center(
+            Positioned(
+              top: -30, right: -20,
               child: Container(
-                width: 40,
-                height: 4,
+                width: 130, height: 130,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  shape: BoxShape.circle,
+                  color: _lavender.withOpacity(0.15),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+            Positioned(
+              bottom: -20, right: 60,
+              child: Container(
+                width: 80, height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _mint.withOpacity(0.12),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: _mint.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: _mint.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6, height: 6,
+                          decoration: const BoxDecoration(
+                              color: _mint, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text('On Duty',
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _mint)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Technician\nPortal',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      color: _white,
+                      height: 1.1,
+                      letterSpacing: -1,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      const Text(
-                        'Customer Details',
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        customer.name,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
+                      _HeroPill(label: '⚙️ Services', color: _peach),
+                      _HeroPill(label: '💧 PureCare', color: _lavender),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            _buildInfoTile(
-              Icons.phone_outlined,
-              'Phone Number',
-              customer.phone,
-              const Color(0xFF10B981),
-            ),
-            const SizedBox(height: 12),
-            _buildInfoTile(
-              Icons.location_on_outlined,
-              'Address',
-              customer.address,
-              const Color(0xFF0EA5E9),
-            ),
-            const SizedBox(height: 12),
-            _buildInfoTile(
-              Icons.confirmation_number_outlined,
-              'Service Number',
-              s.serviceNumber.toString(),
-              const Color(0xFFF59E0B),
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildInfoTile(IconData icon, String label, String value, Color color) {
+class _HeroPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _HeroPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.1)),
+        color: color.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: color.withOpacity(0.45)),
       ),
-      child: Row(
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVICES LIST
+// ─────────────────────────────────────────────────────────────────────────────
+class _ServicesList extends StatelessWidget {
+  final List<TechnicianService> services;
+  final Future<void> Function(TechnicianService) onComplete;
+  final Future<void> Function(TechnicianService) onShowDetails;
+  final bool isWide;
+  final bool hideInstallationCard;
+
+  const _ServicesList({
+    required this.services,
+    required this.onComplete,
+    required this.onShowDetails,
+    this.isWide = false,
+    this.hideInstallationCard = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final EdgeInsets padding = isWide
+        ? const EdgeInsets.fromLTRB(10, 20, 20, 32)
+        : const EdgeInsets.fromLTRB(16, 16, 16, 100);
+
+    if (services.isEmpty) {
+      return Padding(
+        padding: padding,
+        child: Column(
+          children: [
+            _EmptyBento(),
+            if (!hideInstallationCard) ...[
+              const SizedBox(height: 14),
+              _InstallationCard(),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Upcoming Services',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _ink,
+                      letterSpacing: -0.5)),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _lavender.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  '${services.length} ${services.length == 1 ? 'job' : 'jobs'}',
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _ink),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (!hideInstallationCard) ...[
+            _InstallationCard(),
+            const SizedBox(height: 14),
+          ],
+          isWide
+              ? _WideGrid(
+                  services: services,
+                  onComplete: onComplete,
+                  onShowDetails: onShowDetails)
+              : _NarrowList(
+                  services: services,
+                  onComplete: onComplete,
+                  onShowDetails: onShowDetails),
+        ],
+      ),
+    );
+  }
+}
+
+class _WideGrid extends StatelessWidget {
+  final List<TechnicianService> services;
+  final Future<void> Function(TechnicianService) onComplete;
+  final Future<void> Function(TechnicianService) onShowDetails;
+  const _WideGrid(
+      {required this.services,
+      required this.onComplete,
+      required this.onShowDetails});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < services.length; i += 2) {
+      rows.add(Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _ServiceCard(
+              service: services[i],
+              index: i,
+              onComplete: onComplete,
+              onShowDetails: onShowDetails,
+            ),
+          ),
+          const SizedBox(width: 12),
+          if (i + 1 < services.length)
+            Expanded(
+              child: _ServiceCard(
+                service: services[i + 1],
+                index: i + 1,
+                onComplete: onComplete,
+                onShowDetails: onShowDetails,
+              ),
+            )
+          else
+            const Expanded(child: SizedBox()),
+        ],
+      ));
+      rows.add(const SizedBox(height: 12));
+    }
+    return Column(children: rows);
+  }
+}
+
+class _NarrowList extends StatelessWidget {
+  final List<TechnicianService> services;
+  final Future<void> Function(TechnicianService) onComplete;
+  final Future<void> Function(TechnicianService) onShowDetails;
+  const _NarrowList(
+      {required this.services,
+      required this.onComplete,
+      required this.onShowDetails});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(services.length, (i) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: _ServiceCard(
+          service: services[i],
+          index: i,
+          onComplete: onComplete,
+          onShowDetails: onShowDetails,
+        ),
+      )),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVICE CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _ServiceCard extends StatefulWidget {
+  final TechnicianService service;
+  final int index;
+  final Future<void> Function(TechnicianService) onComplete;
+  final Future<void> Function(TechnicianService) onShowDetails;
+
+  const _ServiceCard({
+    required this.service,
+    required this.index,
+    required this.onComplete,
+    required this.onShowDetails,
+  });
+
+  @override
+  State<_ServiceCard> createState() => _ServiceCardState();
+}
+
+class _ServiceCardState extends State<_ServiceCard> {
+  bool _pressed = false;
+
+  static const _colors = [
+    _lavender, _mint, _sky, _peach, _blush, _sage,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _colors[widget.index % _colors.length];
+    final s = widget.service;
+
+    return GestureDetector(
+      onTap: () => widget.onShowDetails(s),
+      child: Container(
+        decoration: BoxDecoration(
+          color: accent.withOpacity(0.38),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46, height: 46,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Center(
+                      child: Text('🔧', style: TextStyle(fontSize: 20)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Service ${s.serviceNumber}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: _ink,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Customer #${s.customerId}',
+                          style: const TextStyle(
+                              fontSize: 11,
+                              color: _ink2,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _white.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 11, color: _ink2),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(
+                  color: _ink.withOpacity(0.08), height: 1, thickness: 1),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _white.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Row(
+                  children: [
+                    const Text('📅', style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Service Date',
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _ink2)),
+                        const SizedBox(height: 1),
+                        Text(s.serviceDate,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: _ink)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: GestureDetector(
+                onTap: () => widget.onComplete(s),
+                onTapDown: (_) => setState(() => _pressed = true),
+                onTapUp: (_) => setState(() => _pressed = false),
+                onTapCancel: () => setState(() => _pressed = false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 130),
+                  height: 48,
+                  transform: Matrix4.identity()
+                    ..scale(_pressed ? 0.97 : 1.0),
+                  transformAlignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _pressed
+                        ? _darkPill.withOpacity(0.82)
+                        : _darkPill,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('✅', style: TextStyle(fontSize: 14)),
+                      SizedBox(width: 8),
+                      Text('Mark as Complete',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: _white,
+                              letterSpacing: 0.1)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INSTALLATION REQUESTS CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _InstallationCard extends StatefulWidget {
+  @override
+  State<_InstallationCard> createState() => _InstallationCardState();
+}
+
+class _InstallationCardState extends State<_InstallationCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const InstallationJobsScreen()),
+      ),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 130),
+        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transformAlignment: Alignment.center,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _sky.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46, height: 46,
+              decoration: BoxDecoration(
+                color: _sky.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Center(
+                child: Text('📦', style: TextStyle(fontSize: 20)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Installation Requests',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _ink,
+                          letterSpacing: -0.2)),
+                  SizedBox(height: 3),
+                  Text('View assigned installation jobs',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: _ink2,
+                          fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            Container(
+              width: 30, height: 30,
+              decoration: BoxDecoration(
+                color: _white.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 12, color: _ink),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMPTY BENTO
+// ─────────────────────────────────────────────────────────────────────────────
+class _EmptyBento extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: _sage.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: _sage.withOpacity(0.5),
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: const Text('🎉', style: TextStyle(fontSize: 36)),
           ),
+          const SizedBox(height: 16),
+          const Text('All Caught Up!',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: _ink,
+                  letterSpacing: -0.4)),
+          const SizedBox(height: 6),
+          const Text('No upcoming services.\nEnjoy your break!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13, color: _ink2, height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIRM DIALOG
+// ─────────────────────────────────────────────────────────────────────────────
+class _ConfirmDialog extends StatelessWidget {
+  final TechnicianService service;
+  const _ConfirmDialog({required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: _bg,
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: _peach.withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: const Text('✅', style: TextStyle(fontSize: 32)),
+            ),
+            const SizedBox(height: 16),
+            const Text('Complete Service?',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: _ink,
+                    letterSpacing: -0.4)),
+            const SizedBox(height: 8),
+            Text(
+              'Mark Service ${service.serviceNumber} as completed?',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 13, color: _ink2, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context, false),
+                    child: Container(
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: _ink.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text('Cancel',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _ink2)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context, true),
+                    child: Container(
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: _darkPill,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text('Confirm',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: _white)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER BOTTOM SHEET
+// ─────────────────────────────────────────────────────────────────────────────
+class _CustomerBottomSheet extends StatelessWidget {
+  final dynamic customer;
+  final TechnicianService service;
+  const _CustomerBottomSheet(
+      {required this.customer, required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: _ink.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _lavender.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text('👤', style: TextStyle(fontSize: 24)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Customer Details',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: _ink2,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 3),
+                    Text(
+                      customer.name ?? '—',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: _ink,
+                          letterSpacing: -0.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _InfoTile(
+              emoji: '📱',
+              label: 'Phone Number',
+              value: customer.phone ?? '—',
+              color: _mint),
+          const SizedBox(height: 10),
+          _InfoTile(
+              emoji: '📍',
+              label: 'Address',
+              value: customer.address ?? '—',
+              color: _sky),
+          const SizedBox(height: 10),
+          _InfoTile(
+              emoji: '🔢',
+              label: 'Service Number',
+              value: service.serviceNumber.toString(),
+              color: _peach),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final String value;
+  final Color color;
+  const _InfoTile(
+      {required this.emoji,
+      required this.label,
+      required this.value,
+      required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 16)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: _ink2)),
+                const SizedBox(height: 3),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _ink)),
               ],
             ),
           ),
@@ -1106,14 +1184,214 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen>
       ),
     );
   }
+}
 
-  Widget _buildRefreshButton() {
-    return RotationTransition(
-      turns: _refreshController,
-      child: FloatingActionButton(
-        onPressed: _refresh,
-        backgroundColor: const Color(0xFF0EA5E9),
-        child: const Icon(Icons.refresh, color: Colors.white),
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTTOM SHEET STATES
+// ─────────────────────────────────────────────────────────────────────────────
+class _BottomSheetLoading extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: const EdgeInsets.all(40),
+      child: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: _darkPill, strokeWidth: 2.5),
+          SizedBox(height: 16),
+          Text('Loading customer details…',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _ink2)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomSheetError extends StatelessWidget {
+  const _BottomSheetError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: _bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: const EdgeInsets.all(40),
+      child: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('❌', style: TextStyle(fontSize: 36)),
+          SizedBox(height: 16),
+          Text('Failed to load customer info',
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: _ink)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOADING STATE
+// ─────────────────────────────────────────────────────────────────────────────
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 300,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: _darkPill, strokeWidth: 2.5),
+            SizedBox(height: 16),
+            Text('Loading services…',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _ink2)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ERROR STATE
+// ─────────────────────────────────────────────────────────────────────────────
+class _ErrorState extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 360,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: _blush.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Text('❌', style: TextStyle(fontSize: 32)),
+              ),
+              const SizedBox(height: 16),
+              const Text('Could not load services',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: _ink,
+                      letterSpacing: -0.4)),
+              const SizedBox(height: 8),
+              Text(error,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 12, color: _ink2, height: 1.5)),
+              const SizedBox(height: 24),
+              _RetryButton(onTap: onRetry),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RetryButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _RetryButton({required this.onTap});
+
+  @override
+  State<_RetryButton> createState() => _RetryButtonState();
+}
+
+class _RetryButtonState extends State<_RetryButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 130),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
+        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transformAlignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: _darkPill,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🔄', style: TextStyle(fontSize: 14)),
+            SizedBox(width: 8),
+            Text('Retry',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: _white)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFRESH FAB
+// ─────────────────────────────────────────────────────────────────────────────
+class _RefreshFab extends StatelessWidget {
+  final AnimationController controller;
+  final VoidCallback onTap;
+  const _RefreshFab({required this.controller, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: RotationTransition(
+        turns: controller,
+        child: Container(
+          width: 52, height: 52,
+          decoration: BoxDecoration(
+            color: _darkPill,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: _darkPill.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Text('🔄', style: TextStyle(fontSize: 20)),
+          ),
+        ),
       ),
     );
   }

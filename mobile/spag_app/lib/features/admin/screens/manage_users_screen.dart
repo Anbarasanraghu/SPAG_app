@@ -29,7 +29,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   }
 
   Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
+    switch (role.toLowerCase().trim()) {
       case 'admin':
         return const Color(0xFFEC4899);
       case 'technician':
@@ -42,7 +42,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   }
 
   IconData _getRoleIcon(String role) {
-    switch (role.toLowerCase()) {
+    switch (role.toLowerCase().trim()) {
       case 'admin':
         return Icons.admin_panel_settings;
       case 'technician':
@@ -92,14 +92,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
                           blurRadius: 20,
-                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
                       ),
                     ),
                   ),
@@ -320,7 +320,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            
+
                             // User details
                             Expanded(
                               child: Column(
@@ -355,16 +355,17 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ],
                               ),
                             ),
-                            
+
                             // Role Dropdown
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
                                 color: roleColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: DropdownButton<String>(
-                                value: normalizedRole,
+                                value: user.role.toLowerCase().trim(),
                                 underline: const SizedBox(),
                                 isDense: true,
                                 icon: Icon(
@@ -386,29 +387,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                   );
                                 }).toList(),
                                 onChanged: (newRole) async {
-                                  if (newRole == null || newRole == normalizedRole) return;
-
-                                  try {
-                                    await AdminUserService.updateUserRole(
-                                      userId: user.id,
-                                      role: newRole,
-                                    );
-
-                                    if (mounted) {
-                                      setState(() {
-                                        usersFuture = AdminUserService.fetchUsers();
-                                      });
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Error updating role: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  }
+                                  if (newRole == null) return;
+                                  await AdminUserService.updateUserRole(
+                                    userId: user.id,
+                                    role: newRole,
+                                  );
+                                  setState(() {
+                                    usersFuture =
+                                        AdminUserService.fetchUsers();
+                                  });
                                 },
                               ),
                             ),

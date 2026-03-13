@@ -7,6 +7,7 @@ class InstallationJob {
   final String modelName;
   final int purifierModelId;
   final String status;
+  final int purifierModelId; // ADD THIS
 
   InstallationJob({
     required this.requestId,
@@ -17,18 +18,19 @@ class InstallationJob {
     required this.modelName,
     required this.purifierModelId,
     required this.status,
+    required this.purifierModelId, // ADD THIS
   });
 
   factory InstallationJob.fromJson(Map<String, dynamic> json) {
     return InstallationJob(
       requestId: json['request_id'] as int? ?? 0,
-      serviceId: json['service_id'] as int?,
-      customerName: json['customer_name'] as String? ?? 'Unknown',
-      customerPhone: json['customer_phone'] as String? ?? 'N/A',
-      address: json['address'] as String? ?? 'N/A',
+      customerName: json['customer_name'] as String? ?? '',
+      customerPhone: json['customer_phone'] as String? ?? '',
+      address: json['address'] as String? ?? '',
       modelName: json['model_name'] as String? ?? 'Unknown',
       purifierModelId: json['purifier_model_id'] as int? ?? 0,
       status: json['status'] as String? ?? 'unknown',
+      purifierModelId: json['purifier_model_id'] as int? ?? 0, // ADD THIS
     );
   }
 
@@ -42,6 +44,7 @@ class InstallationJob {
       'model_name': modelName,
       'purifier_model_id': purifierModelId,
       'status': status,
+      'purifier_model_id': purifierModelId, // ADD THIS
     };
   }
 }

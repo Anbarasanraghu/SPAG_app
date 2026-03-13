@@ -4,6 +4,7 @@ import '../../../core/api/dashboard_service.dart';
 import '../../../core/api/service_history_service.dart';
 import '../../../core/models/dashboard.dart';
 import '../../../core/services/purifier_model_cache.dart';
+import '../../../core/services/installation_event_service.dart';
 import '../../auth/services/auth_service.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
@@ -49,13 +50,24 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
 
     _fadeController.forward();
     _slideController.forward();
+    
+    // 🔹 Listen to installation completion events
+    InstallationEventService.installationCompletedNotifier.addListener(_onInstallationCompleted);
   }
 
   @override
   void dispose() {
+    // 🔹 Clean up listener
+    InstallationEventService.installationCompletedNotifier.removeListener(_onInstallationCompleted);
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
+  }
+
+  void _onInstallationCompleted() {
+    debugPrint("[CustomerDashboard] Installation event received, refreshing dashboard");
+    // The FutureBuilder will automatically rebui on state change if we trigger a rebuild
+    setState(() {});
   }
 
   Future<CustomerDashboard> _loadDashboard() async {

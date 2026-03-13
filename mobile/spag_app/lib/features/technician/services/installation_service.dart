@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../../auth/services/auth_service.dart';
 import '../../../core/api/api_config.dart';
+import '../../../core/services/installation_event_service.dart';
 import '../models/installation_job.dart';
 
 class InstallationService {
@@ -31,9 +32,9 @@ class InstallationService {
       }
 
       final List<dynamic> data = jsonDecode(response.body);
-      
+
       debugPrint("Parsed ${data.length} installation jobs");
-      
+
       return data
           .map((e) {
             try {
@@ -51,76 +52,55 @@ class InstallationService {
   }
 
   /// 🔹 Complete Installation
-  /// Accepts a payload map with required fields matching backend schema
-  static Future<void> completeInstallation(InstallationJob job, Map<String, dynamic> payload) async {
+  static Future<void> completeInstallation(
+    int requestId,
+    InstallationJob job,
+    Map<String, dynamic> details,
+  ) async {
     final token = await AuthService.getToken();
 
-    final required = [
-      'customer_name',
-      'address',
-      'installation_date',
-      'site_details',
-      'purifier_model_id',
-    ];
-    for (var f in required) {
-      if (!payload.containsKey(f) || payload[f] == null || payload[f].toString().isEmpty) {
-        throw Exception('Missing required field: $f');
-      }
-    }
-
     try {
-      final response = await http.put(Uri.parse("$baseUrl/technician/installations/${job.requestId}/complete"),
+      final payload = <String, dynamic>{
+        ...details,
+        "purifier_model_id": job.purifierModelId,
+        "notes": details["notes"] ?? "Installation completed successfully",
+      };
+
+      debugPrint("[CompleteInstallation] Final payload: $payload");
+
+      final uri = Uri.parse(
+        "$baseUrl/technician/installations/$requestId/complete",
+      );
+
+      final response = await http.put(
+        uri,
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
         },
         body: jsonEncode(payload),
+        body: jsonEncode(payload),
       );
 
-      debugPrint("Complete Installation Response Status: ${response.statusCode}");
+      debugPrint(
+        "Complete Installation Response Status: ${response.statusCode}",
+      );
+      debugPrint(
+        "Complete Installation Response Body: ${response.body}",
+      );
 
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception(
           "Failed to complete installation (${response.statusCode}): ${response.body}",
         );
       }
+
+      InstallationEventService.notifyInstallationCompleted(requestId);
+      debugPrint(
+        "[CompleteInstallation] Event broadcast for request $requestId",
+      );
     } catch (e) {
       debugPrint("Error completing installation: $e");
-      rethrow;
-    }
-  }
-
-  /// 🔹 Update installation status
-  static Future<void> updateInstallationStatus({
-    required int requestId,
-    required String status,
-  }) async {
-    final token = await AuthService.getToken();
-
-    try {
-      final response = await http.put(
-        Uri.parse(
-          "$baseUrl/technician/installations/$requestId/status",
-        ),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "status": status,
-        }),
-      );
-
-      debugPrint("Update Installation Status Response Status: ${response.statusCode}");
-      debugPrint("Update Installation Status Response Body: ${response.body}");
-
-      if (response.statusCode != 200) {
-        throw Exception(
-          "Failed to update installation status (${response.statusCode}): ${response.body}",
-        );
-      }
-    } catch (e) {
-      debugPrint("Error updating installation status: $e");
       rethrow;
     }
   }

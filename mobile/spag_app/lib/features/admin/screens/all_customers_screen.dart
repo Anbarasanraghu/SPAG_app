@@ -93,8 +93,10 @@ class _AllCustomersScreenState extends State<AllCustomersScreen> {
         foregroundColor: _text,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, size: 14, color: _text),
-          onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_ios, size: 20),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+              },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -103,8 +103,10 @@ class _TechnicianServiceLogsScreenState
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1A1F36),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios, size: 20),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+            },
         ),
       ),
       body: loading

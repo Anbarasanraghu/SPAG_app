@@ -278,7 +278,9 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
         foregroundColor: const Color(0xFF1A1F36),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                  if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+              },
         ),
       ),
       body: loading

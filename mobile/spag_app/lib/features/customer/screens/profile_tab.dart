@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/ui/ui_kit.dart';
 import '../../auth/services/auth_service.dart';
 import '../../customer/services/customer_profile_service.dart';
 import '../screens/customer_dashboard_screen.dart';
@@ -22,17 +23,18 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _loading = true;
   String? _token;
+  String? _role;
   final _authController = AuthController();
 
-  static const Color _bg       = Color(0xFFF5F9FF);
-  static const Color _panel    = Color(0xFFFFFFFF);
-  static const Color _surface  = Color(0xFFEAF3FF);
-  static const Color _accent   = Color(0xFF2A8FD4);
-  static const Color _mid      = Color(0xFF5AABDE);
-  static const Color _soft     = Color(0xFFC4DFF5);
-  static const Color _text     = Color(0xFF0D2A3F);
-  static const Color _muted    = Color(0xFF6B8FA8);
-  static const Color _hairline = Color(0xFFD6E8F5);
+  // ─── PALETTE ───────────────────────────────────────────────────────────────
+  static const _bg = Color(0xFFF5F4F0);
+  static const _dark = Color(0xFF1A1A18);
+  static const _lavender = Color(0xFFD5CCFF);
+  static const _mint = Color(0xFFBDF0D8);
+  static const _peach = Color(0xFFF8DBBF);
+  static const _blush = Color(0xFFF5C8D4);
+  static const _ink = Color(0xFF111110);
+  static const _ink2 = Color(0xFF8A8880);
 
   @override
   void initState() {
@@ -43,413 +45,402 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _init() async {
     final token = await AuthService.getToken();
     final role = await AuthService.getRole();
-
-    if (role == 'admin' || role == 'Admin' || role == 'technician' || role == 'Technician') {
-      setState(() {
-        _token = token;
-        _loading = false;
-      });
-      return;
-    }
-
     setState(() {
       _token = token;
+      _role = role?.toLowerCase().trim();
       _loading = false;
     });
   }
 
-  Future<void> _goToDashboardIfReady() async {
+  Future<void> _goToDashboard() async {
     if (_token == null) return;
-
-    final role = await AuthService.getRole();
-    if (role == 'admin' || role == 'Admin') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-      return;
-    } else if (role == 'technician' || role == 'Technician') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianHomeScreen()));
-      return;
-    }
-
-    final exists = await CustomerProfileService.profileExists();
-    if (!mounted) return;
-    if (!exists) {
-      showDialog(
-        context: context,
-        builder: (_) => Dialog(
-          backgroundColor: _panel,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.access_time_rounded, color: Color(0xFFD4842A), size: 22),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Installation Pending',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: _text,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Your installation is pending. Please wait for technician.',
-                  style: TextStyle(fontSize: 12, color: _muted, height: 1.4),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 40,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _surface,
-                      foregroundColor: _accent,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: _soft),
-                      ),
-                    ),
-                    child: const Text(
-                      'OK',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.6,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    if (_role == 'admin') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+    } else if (_role == 'technician') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const TechnicianHomeScreen()));
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerDashboardScreen()));
+      final exists = await CustomerProfileService.profileExists();
+      if (!mounted) return;
+      if (!exists) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Installation Pending'),
+            content: const Text(
+                'Your installation is pending. Please wait for technician.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              )
+            ],
+          ),
+        );
+      } else {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const CustomerDashboardScreen()));
+      }
     }
   }
 
   Future<void> _showLogin() async {
-    final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => LoginScreen()));
+    final result = await Navigator.push(
+        context, MaterialPageRoute(builder: (_) => LoginScreen()));
     if (result is AuthResponse) {
-      await AuthService.saveToken(result.token);
       await AuthService.saveRole(result.role);
-      setState(() => _token = result.token);
+      setState(() {
+        _token = result.token;
+        _role = result.role.toLowerCase().trim();
+      });
+    }
+  }
+
+  Future<void> _logout() async {
+    await AuthService.logout();
+    setState(() {
+      _token = null;
+      _role = null;
+    });
+  }
+
+  String get _roleLabel {
+    switch (_role) {
+      case 'admin':
+        return 'Administrator';
+      case 'technician':
+        return 'Technician';
+      default:
+        return 'Customer';
+    }
+  }
+
+  String get _roleEmoji {
+    switch (_role) {
+      case 'admin':
+        return '🛡️';
+      case 'technician':
+        return '⚙️';
+      default:
+        return '👤';
+    }
+  }
+
+  Color get _roleColor {
+    switch (_role) {
+      case 'admin':
+        return _blush;
+      case 'technician':
+        return _mint;
+      default:
+        return _lavender;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ── LOADING ──
     if (_loading) {
-      return Container(
-        color: _bg,
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _panel,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _accent.withOpacity(0.10),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(_accent),
-            ),
-          ),
-        ),
+      return const Scaffold(
+        backgroundColor: _bg,
+        body: Center(child: CircularProgressIndicator(color: _dark)),
       );
     }
 
-    // ── NOT LOGGED IN ──
-    if (_token == null) {
-      return Container(
-        color: _bg,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: _token == null ? _buildLoggedOut() : _buildLoggedIn(),
+      ),
+    );
+  }
+
+  // ─── LOGGED OUT ─────────────────────────────────────────────────────────────
+  Widget _buildLoggedOut() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+
+          // Icon
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: _lavender.withOpacity(0.4),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text('👤', style: TextStyle(fontSize: 44)),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          const Text(
+            'Welcome!',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: _ink,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Login to access your profile\nand manage your services',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: _ink2, height: 1.5),
+          ),
+          const SizedBox(height: 40),
+
+          // Login button
+          _ProfileButton(
+            label: 'Login to Account',
+            emoji: '🔑',
+            color: _dark,
+            textColor: Colors.white,
+            onTap: _showLogin,
+          ),
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _peach.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Row(
               children: [
-                // Illustration
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: _surface,
-                    shape: BoxShape.circle,
+                Text('💡', style: TextStyle(fontSize: 18)),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Request a product from the Catalog to register as a customer',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: _ink2,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4),
                   ),
-                  child: const Icon(Icons.person_outline_rounded, size: 40, color: _soft),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── LOGGED IN ──────────────────────────────────────────────────────────────
+  Widget _buildLoggedIn() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+
+          // Avatar card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _dark,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: _roleColor.withOpacity(0.25),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: _roleColor.withOpacity(0.5), width: 2),
+                  ),
+                  child: Center(
+                    child: Text(_roleEmoji,
+                        style: const TextStyle(fontSize: 36)),
+                  ),
                 ),
                 const SizedBox(height: 16),
-
-                // Eyebrow
-                const Text(
-                  'PROFILE',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: _muted,
-                    letterSpacing: 2.2,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Welcome back',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: _text,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Sign in to access your account and track your purifier.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: _muted, height: 1.5),
-                ),
-                const SizedBox(height: 24),
-
-                // Login button
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: _showLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _accent,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.login_rounded, size: 15),
-                        SizedBox(width: 8),
-                        Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.8,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Hint text
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _hairline),
+                    color: _roleColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                        color: _roleColor.withOpacity(0.4)),
                   ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.info_outline_rounded, size: 12, color: _muted),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Or request a product from the Catalog to register',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: _muted,
-                            fontFamily: 'monospace',
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    _roleLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: _roleColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Logged In',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Dashboard button
+          _ProfileButton(
+            label: 'Open Dashboard',
+            emoji: '📊',
+            color: _roleColor.withOpacity(0.4),
+            textColor: _ink,
+            onTap: _goToDashboard,
+          ),
+          const SizedBox(height: 12),
+
+          // Info tiles
+          _InfoTile(
+            emoji: '🔒',
+            label: 'Account Role',
+            value: _roleLabel,
+            color: _roleColor,
+          ),
+          const SizedBox(height: 10),
+          _InfoTile(
+            emoji: '✅',
+            label: 'Status',
+            value: 'Active',
+            color: _mint,
+          ),
+          const SizedBox(height: 24),
+
+          // Logout button
+          _ProfileButton(
+            label: 'Logout',
+            emoji: '🚪',
+            color: _blush.withOpacity(0.4),
+            textColor: const Color(0xFFB03050),
+            onTap: _logout,
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── REUSABLE WIDGETS ─────────────────────────────────────────────────────────
+class _ProfileButton extends StatefulWidget {
+  final String label;
+  final String emoji;
+  final Color color;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  const _ProfileButton({
+    required this.label,
+    required this.emoji,
+    required this.color,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_ProfileButton> createState() => _ProfileButtonState();
+}
+
+class _ProfileButtonState extends State<_ProfileButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 130),
+        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transformAlignment: Alignment.center,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: BorderRadius.circular(16),
         ),
-      );
-    }
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(widget.emoji, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: widget.textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-    // ── LOGGED IN ──
+class _InfoTile extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _InfoTile({
+    required this.emoji,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      color: _bg,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_accent, Color(0xFF1A6BA8)],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: _accent.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.person_rounded, size: 36, color: Colors.white),
-              ),
-              const SizedBox(height: 14),
-
-              const Text(
-                'ACCOUNT',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: _muted,
-                  letterSpacing: 2.2,
-                  fontFamily: 'monospace',
-                ),
-              ),
-              const SizedBox(height: 3),
-              const Text(
-                'You\'re signed in',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: _text,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Card with actions
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _panel,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _hairline),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _accent.withOpacity(0.06),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Open Dashboard
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: ElevatedButton(
-                        onPressed: _goToDashboardIfReady,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _accent,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.dashboard_rounded, size: 15),
-                            SizedBox(width: 8),
-                            Text(
-                              'OPEN DASHBOARD',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.6,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Divider
-                    Container(height: 1, color: _hairline),
-                    const SizedBox(height: 8),
-
-                    // Logout
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await AuthService.logout();
-                          setState(() => _token = null);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _surface,
-                          foregroundColor: const Color(0xFFE05A5A),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: _hairline),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.logout_rounded, size: 15),
-                            SizedBox(width: 8),
-                            Text(
-                              'LOGOUT',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.8,
-                                fontFamily: 'monospace',
-                                color: Color(0xFFE05A5A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF8A8880))),
+              const SizedBox(height: 2),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111110))),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

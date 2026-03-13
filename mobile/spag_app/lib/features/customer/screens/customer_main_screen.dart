@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'customer_catalog_screen.dart';
 import 'my_requests_screen.dart';
 import 'profile_tab.dart';
@@ -8,6 +9,18 @@ import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../technician/screens/technician_home_screen.dart';
 import 'customer_dashboard_screen.dart';
 
+// ─── PALETTE (matches app) ────────────────────────────────────────────────────
+const _bg       = Color(0xFFF5F4F0);
+const _white    = Color(0xFFFFFFFF);
+const _ink      = Color(0xFF111110);
+const _ink2     = Color(0xFF8A8880);
+const _darkPill = Color(0xFF1A1A18);
+const _lavender = Color(0xFFD5CCFF);
+const _mint     = Color(0xFFBDF0D8);
+const _sky      = Color(0xFFBFE0F5);
+const _peach    = Color(0xFFF8DBBF);
+
+// ─────────────────────────────────────────────────────────────────────────────
 class CustomerMainScreen extends StatefulWidget {
   const CustomerMainScreen({super.key});
 
@@ -30,73 +43,138 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
     if (mounted) setState(() {});
   }
 
-  static const List<Widget> _pages = <Widget>[
-    CustomerCatalogScreen(),
-    MyRequestsScreen(),
-    ProfileTab(),
+  List<Widget> get _pages => <Widget>[
+    const CustomerCatalogScreen(),
+    const MyRequestsScreen(),
+    const ProfileTab(),
+  ];
+
+  // Nav items config
+  static const _navItems = [
+    _NavItem(icon: Icons.home_rounded,        label: 'Catalog',  color: _lavender),
+    _NavItem(icon: Icons.list_alt_rounded,    label: 'Requests', color: _mint),
+    _NavItem(icon: Icons.person_rounded,      label: 'Profile',  color: _peach),
   ];
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ));
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      // Removed the standard AppBar to let sub-pages manage their own look, 
-      // or used a very slim one if you prefer global control:
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        title: Text(
-          _currentIndex == 0 ? 'SPAG' : _currentIndex == 1 ? 'MY REQUESTS' : 'PROFILE',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF0D2A3F),
-            letterSpacing: 1,
+      backgroundColor: _bg,
+      extendBody: true, // ✅ lets content go behind floating navbar
+      appBar: _buildAppBar(),
+      body: _pages[_currentIndex],
+      bottomNavigationBar: _FloatingNavBar(
+        currentIndex: _currentIndex,
+        items: _navItems,
+        onTap: (i) => setState(() => _currentIndex = i),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    final titles = ['Catalog', 'My Requests', 'Profile'];
+
+    return AppBar(
+      backgroundColor: _bg,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          // App logo / name pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: _darkPill,
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                      color: _mint, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 7),
+                const Text(
+                  'SPAG',
+                  style: TextStyle(
+                    color: _white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: _buildHeaderAction(),
+          const SizedBox(width: 10),
+          // Page title
+          Text(
+            titles[_currentIndex],
+            style: const TextStyle(
+              color: _ink,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
           ),
         ],
       ),
-      body: _pages[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
-          elevation: 0,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF2A8FD4),
-          unselectedItemColor: const Color(0xFF6B8FA8),
-          selectedLabelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-          unselectedLabelStyle: TextStyle(fontSize: 11),
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded, size: 22), 
-              activeIcon: Icon(Icons.grid_view_rounded, size: 22),
-              label: 'Catalog',
+      actions: [
+        if (role == null) ...[
+          // Not logged in — show Login button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.layers_outlined, size: 22),
-              activeIcon: Icon(Icons.layers_rounded, size: 22),
-              label: 'Requests',
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: _darkPill,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: const Text(
+                'Login',
+                style: TextStyle(
+                  color: _white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded, size: 22),
-              activeIcon: Icon(Icons.person_rounded, size: 22),
-              label: 'Profile',
+          ),
+        ] else ...[
+          // Logged in — show dashboard icon button
+          GestureDetector(
+            onTap: _goToDashboard,
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _sky.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.dashboard_rounded,
+                color: _ink,
+                size: 20,
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -147,6 +225,105 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => dashboard),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV ITEM DATA
+// ─────────────────────────────────────────────────────────────────────────────
+class _NavItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _NavItem({required this.icon, required this.label, required this.color});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FLOATING PILL NAVBAR
+// ─────────────────────────────────────────────────────────────────────────────
+class _FloatingNavBar extends StatelessWidget {
+  final int currentIndex;
+  final List<_NavItem> items;
+  final ValueChanged<int> onTap;
+
+  const _FloatingNavBar({
+    required this.currentIndex,
+    required this.items,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Container(
+        height: 68,
+        decoration: BoxDecoration(
+          color: _darkPill,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(items.length, (i) {
+            final item = items[i];
+            final isSelected = i == currentIndex;
+            return GestureDetector(
+              onTap: () => onTap(i),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? item.color.withOpacity(0.22)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: isSelected ? item.color : _ink2,
+                      size: 22,
+                    ),
+                    // ✅ Label slides in when selected
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      child: isSelected
+                          ? Row(
+                              children: [
+                                const SizedBox(width: 7),
+                                Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    color: item.color,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 }

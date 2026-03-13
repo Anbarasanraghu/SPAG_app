@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/api/purifier_service.dart';
-
-// ─── COLOUR TOKENS ───────────────────────────────────────
-// bg: #F5F9FF  panels: #FFFFFF  surface: #EAF3FF
-// accent: #2A8FD4  mid: #5AABDE  soft: #C4DFF5
-// text: #0D2A3F  muted: #6B8FA8  hairline: #D6E8F5
+import '../../../core/ui/ui_kit.dart';
 
 class MyRequestsScreen extends StatefulWidget {
   const MyRequestsScreen({super.key});
@@ -57,258 +53,129 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: kBg,
       appBar: AppBar(
-        surfaceTintColor: _bg,
-        backgroundColor: _bg,
+        backgroundColor: kBg,
         elevation: 0,
-        centerTitle: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'MY REQUESTS',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: _muted,
-                letterSpacing: 2.2,
-                fontFamily: 'monospace',
-              ),
-            ),
-            SizedBox(height: 1),
-            Text(
-              'Track your orders',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: _text,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: _hairline),
-        ),
-        actions: [
-          GestureDetector(
-            onTap: _reload,
-            child: Container(
-              margin: const EdgeInsets.only(right: 14),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: _surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _soft),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.refresh_rounded, size: 13, color: _accent),
-                  SizedBox(width: 4),
-                  Text(
-                    'REFRESH',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: _accent,
-                      letterSpacing: 1.4,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        title: const Text(
+          'My Requests',
+          style: TextStyle(
+            color: kInk,
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            letterSpacing: -0.5,
           ),
-        ],
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: kInk),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _requestsFuture,
-        builder: (context, snapshot) {
-          // ── LOADING ──
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _panel,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: _accent.withOpacity(0.10),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(_accent),
-                    ),
+      body: SafeArea(
+        child: FutureBuilder<List<dynamic>>(
+          future: _requestsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: kBlush, size: 48),
+                      const SizedBox(height: 16),
+                      const Text('Failed to load requests', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text(snapshot.error.toString(), style: const TextStyle(color: kBlush)),
+                      const SizedBox(height: 20),
+                      PillButton(
+                        label: 'Retry',
+                        loading: false,
+                        onTap: () => setState(() {
+                          _requestsFuture = PurifierService.listUserRequests();
+                        }),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'Loading requests...',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: _muted,
-                      fontFamily: 'monospace',
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+                ),
+              );
+            }
 
-          // ── ERROR / EMPTY ──
-          if (snapshot.hasError || (snapshot.data ?? []).isEmpty) {
-            return _buildEmptyState(
-              snapshot.hasError ? 'Error loading requests' : 'No requests yet',
-            );
-          }
+            final requests = snapshot.data ?? [];
 
-          final requests = snapshot.data!;
+            if (requests.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox_rounded, color: kLavender, size: 60),
+                    const SizedBox(height: 16),
+                    const Text('No requests found', style: TextStyle(fontWeight: FontWeight.w600, color: kInk2)),
+                  ],
+                ),
+              );
+            }
 
-          // ── LIST ──
-          return RefreshIndicator(
-            color: _accent,
-            backgroundColor: _panel,
-            onRefresh: () async => _reload(),
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
               itemCount: requests.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
-                final req = requests[index] as Map<String, dynamic>;
-                return _buildRequestItem(req);
+                final r = requests[index] as Map<String, dynamic>;
+                return BentoCard(
+                  color: kLavender,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: kLavender.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.assignment_turned_in_rounded, color: kLavender, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              r['product_name'] ?? 'Request #${r['id'] ?? index}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: kInk,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                MiniChip(
+                                  emoji: '⏳',
+                                  label: r['status'] ?? 'Pending',
+                                  color: kMint,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  r['created_at'] ?? '',
+                                  style: const TextStyle(fontSize: 12, color: kInk2),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildRequestItem(Map<String, dynamic> req) {
-    final statusTheme  = _getStatusTheme(req['status']);
-    final Color color  = statusTheme['color'];
-    final String label = (req['status'] ?? 'Pending')
-        .toUpperCase()
-        .replaceAll('_', ' ');
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: _panel,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _hairline),
-        boxShadow: [
-          BoxShadow(
-            color: _accent.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // ── Status icon ──
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(statusTheme['icon'], color: color, size: 18),
-          ),
-          const SizedBox(width: 11),
-
-          // ── Content ──
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  req['product_name'] ?? 'Purifier Request',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _text,
-                    letterSpacing: -0.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'ID: #${req['id']}  ·  ${req['created_at']}',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: _muted,
-                    fontFamily: 'monospace',
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // ── Status pill ──
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: color.withOpacity(0.25)),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: 1.0,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String msg) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _surface,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.inbox_outlined, size: 36, color: _soft),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            msg,
-            style: const TextStyle(
-              fontSize: 12,
-              color: _muted,
-              fontFamily: 'monospace',
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

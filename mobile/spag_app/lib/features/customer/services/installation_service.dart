@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/api/api_config.dart';
 import '../../auth/services/auth_service.dart';
+import '../../../core/services/installation_event_service.dart';
 
 class InstallationService {
   static Future<List<dynamic>> getCustomerInstallations(int customerId) async {
@@ -54,4 +55,9 @@ class InstallationService {
       throw Exception('Failed to create installation');
     }
   }
+
+  /// 🔹 Get notification listener for installation completion
+  /// Call this in screens to auto-refresh when an installation is completed
+  static dynamic get installationUpdatedNotifier =>
+      InstallationEventService.installationCompletedNotifier;
 }

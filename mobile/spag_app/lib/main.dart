@@ -102,6 +102,7 @@ class SpagApp extends StatelessWidget {
       ),
       home: const AuthCheckScreen(),
       routes: {
+        '/login': (context) => const LoginScreen(),
         '/purifier-catalog': (context) => const CustomerCatalogScreen(),
         '/customer-dashboard': (context) => const CustomerDashboardScreen(),
         '/customer-profile': (context) => const CustomerProfileFormScreen(),
