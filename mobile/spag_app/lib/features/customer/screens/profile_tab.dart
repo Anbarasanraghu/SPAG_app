@@ -143,12 +143,14 @@ class _ProfileTabState extends State<ProfileTab> {
     if (_loading) {
       return const Scaffold(
         backgroundColor: _bg,
+        bottomNavigationBar: const SpagFooterLogo(),
         body: Center(child: CircularProgressIndicator(color: _dark)),
       );
     }
 
     return Scaffold(
       backgroundColor: _bg,
+      bottomNavigationBar: const SpagFooterLogo(),
       body: SafeArea(
         child: _token == null ? _buildLoggedOut() : _buildLoggedIn(),
       ),

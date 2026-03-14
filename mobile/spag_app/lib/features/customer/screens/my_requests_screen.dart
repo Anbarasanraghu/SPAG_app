@@ -54,6 +54,7 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
+      bottomNavigationBar: const SpagFooterLogo(),
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,

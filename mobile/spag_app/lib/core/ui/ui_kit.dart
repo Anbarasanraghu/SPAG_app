@@ -250,4 +250,64 @@ class _PillButtonState extends State<PillButton> {
   }
 }
 
+// ─── SPAG FOOTER LOGO ──────────────────────────────────────────────────────
+class SpagFooterLogo extends StatelessWidget {
+  const SpagFooterLogo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 70,
+      color: kDarkPill,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 20,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Text(
+                'SPAG Service',
+                style: const TextStyle(
+                  color: kWhite,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -15,
+            right: 20,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: kWhite,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.18),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/spag-logo.png',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // Add more shared widgets as needed.

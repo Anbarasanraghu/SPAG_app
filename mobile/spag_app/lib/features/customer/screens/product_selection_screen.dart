@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/ui/ui_kit.dart';
 import 'customer_catalog_screen.dart';
 
 // ─── PALETTE (matches CustomerMainScreen) ────────────────────────────────────
@@ -21,6 +22,7 @@ class ProductSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgColor,
+      bottomNavigationBar: const SpagFooterLogo(),
       body: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),

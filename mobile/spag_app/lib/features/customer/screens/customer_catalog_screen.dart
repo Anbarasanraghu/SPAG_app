@@ -4,6 +4,7 @@ import '../../../core/models/purifier_model.dart';
 import '../../../core/api/purifier_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/controller/auth_controller.dart';
+import '../../../core/ui/ui_kit.dart';
 import 'customer_home_decider_screen.dart';
 import 'product_selection_screen.dart';
 
@@ -219,6 +220,7 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
     return Scaffold(
       appBar: _buildAppBar(),
       backgroundColor: _bg,
+      bottomNavigationBar: const SpagFooterLogo(),
       body: SafeArea(
         child: RefreshIndicator(
           color: _ink,

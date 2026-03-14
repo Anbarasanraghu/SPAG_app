@@ -5,6 +5,7 @@ import '../../../core/api/service_history_service.dart';
 import '../../../core/models/dashboard.dart';
 import '../../../core/services/purifier_model_cache.dart';
 import '../../../core/services/installation_event_service.dart';
+import '../../../core/ui/ui_kit.dart';
 import '../../auth/services/auth_service.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
@@ -137,6 +138,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
+      bottomNavigationBar: const SpagFooterLogo(),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
