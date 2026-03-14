@@ -134,7 +134,7 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: kLavender.withOpacity(0.18),
+                          color: kLavender.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(Icons.assignment_turned_in_rounded, color: kLavender, size: 28),

@@ -132,7 +132,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 width: 140, height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _kLavender.withOpacity(0.18),
+                  color: _kLavender.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -142,7 +142,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 width: 90, height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _kMint.withOpacity(0.15),
+                  color: _kMint.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -161,10 +161,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 5),
                           decoration: BoxDecoration(
-                            color: _kMint.withOpacity(0.18),
+                            color: _kMint.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(100),
                             border:
-                                Border.all(color: _kMint.withOpacity(0.4)),
+                                Border.all(color: _kMint.withValues(alpha: 0.4)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -212,10 +212,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   Container(
                     width: 70, height: 70,
                     decoration: BoxDecoration(
-                      color: _kWhite.withOpacity(0.15),
+                      color: _kWhite.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                          color: _kWhite.withOpacity(0.25), width: 1.5),
+                          color: _kWhite.withValues(alpha: 0.25), width: 1.5),
                     ),
                     child: Center(
                       child: Text(
@@ -303,7 +303,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: _kLavender.withOpacity(0.3),
+              color: _kLavender.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(24),
             ),
             child:
@@ -335,7 +335,7 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,
@@ -364,7 +364,7 @@ class _MiniCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.35),
+        color: color.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -408,7 +408,7 @@ class _BentoInfoCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.4),
+        color: color.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -417,7 +417,7 @@ class _BentoInfoCard extends StatelessWidget {
           Container(
             width: 44, height: 44,
             decoration: BoxDecoration(
-              color: _kWhite.withOpacity(0.5),
+              color: _kWhite.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Center(
@@ -448,7 +448,7 @@ class _BentoInfoCard extends StatelessWidget {
           Container(
             width: 30, height: 30,
             decoration: BoxDecoration(
-              color: _kWhite.withOpacity(0.6),
+              color: _kWhite.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.arrow_forward_ios_rounded,

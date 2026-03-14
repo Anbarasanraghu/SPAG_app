@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/pending_service.dart';
 import '../services/pending_service_service.dart';
 
@@ -73,7 +74,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: _kLavender.withOpacity(0.35),
+                    color: _kLavender.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(Icons.person_add, color: _kInk, size: 20),
@@ -94,7 +95,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _kPeach.withOpacity(0.3),
+                    color: _kPeach.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text('Service #$serviceId',
@@ -117,7 +118,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                     hintStyle:
                         const TextStyle(fontSize: 12, color: _kInk2),
                     filled: true,
-                    fillColor: _kLavender.withOpacity(0.18),
+                    fillColor: _kLavender.withValues(alpha: 0.18),
                     prefixIcon: const Icon(Icons.badge_outlined,
                         color: _kInk2, size: 18),
                     contentPadding: const EdgeInsets.symmetric(
@@ -125,7 +126,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide:
-                          BorderSide(color: _kLavender.withOpacity(0.3)),
+                          BorderSide(color: _kLavender.withValues(alpha: 0.3)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -135,7 +136,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                     disabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide:
-                          BorderSide(color: _kLavender.withOpacity(0.1)),
+                          BorderSide(color: _kLavender.withValues(alpha: 0.1)),
                     ),
                     border: InputBorder.none,
                   ),
@@ -237,7 +238,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                       horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: isAssigning
-                        ? _kInk2.withOpacity(0.2)
+                        ? _kInk2.withValues(alpha: 0.2)
                         : _kDarkPill,
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -279,15 +280,15 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
   Color _statusBgColor(String status) {
     switch (status.toUpperCase()) {
       case "ASSIGNED":
-        return const Color(0xFF3B82F6).withOpacity(0.15);
+        return const Color(0xFF3B82F6).withValues(alpha: 0.15);
       case "IN_PROGRESS":
       case "IN PROGRESS":
-        return const Color(0xFFF59E0B).withOpacity(0.15);
+        return const Color(0xFFF59E0B).withValues(alpha: 0.15);
       case "COMPLETED":
-        return const Color(0xFF10B981).withOpacity(0.15);
+        return const Color(0xFF10B981).withValues(alpha: 0.15);
       case "PENDING":
       default:
-        return const Color(0xFFF59E0B).withOpacity(0.15);
+        return const Color(0xFFF59E0B).withValues(alpha: 0.15);
     }
   }
 
@@ -344,7 +345,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                             Container(
                               padding: const EdgeInsets.all(22),
                               decoration: BoxDecoration(
-                                color: _kPeach.withOpacity(0.3),
+                                color: _kPeach.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: const Icon(
@@ -390,7 +391,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                                       width: 140, height: 140,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: _kLavender.withOpacity(0.18),
+                                        color: _kLavender.withValues(alpha: 0.18),
                                       ),
                                     ),
                                   ),
@@ -400,7 +401,7 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                                       width: 90, height: 90,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: _kMint.withOpacity(0.15),
+                                        color: _kMint.withValues(alpha: 0.15),
                                       ),
                                     ),
                                   ),
@@ -415,12 +416,12 @@ class _PendingServicesScreenState extends State<PendingServicesScreen> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 12, vertical: 5),
                                           decoration: BoxDecoration(
-                                            color: _kMint.withOpacity(0.18),
+                                            color: _kMint.withValues(alpha: 0.18),
                                             borderRadius:
                                                 BorderRadius.circular(100),
                                             border: Border.all(
                                                 color:
-                                                    _kMint.withOpacity(0.4)),
+                                                    _kMint.withValues(alpha: 0.4)),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
@@ -570,11 +571,11 @@ class _ServiceCardState extends State<_ServiceCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
-        transform: Matrix4.identity()..scale(_pressed ? 0.98 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.98 : 1.0)),
         transformAlignment: Alignment.center,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: widget.color.withOpacity(0.38),
+          color: widget.color.withValues(alpha: 0.38),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -588,7 +589,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                 Container(
                   width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFFFF).withOpacity(0.5),
+                    color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Center(
@@ -647,7 +648,7 @@ class _ServiceCardState extends State<_ServiceCard> {
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF).withOpacity(0.45),
+                color: const Color(0xFFFFFFFF).withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -655,7 +656,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                   Container(
                     width: 30, height: 30,
                     decoration: BoxDecoration(
-                      color: _kSage.withOpacity(0.4),
+                      color: _kSage.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.calendar_today_outlined,
@@ -689,7 +690,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 11),
                 decoration: BoxDecoration(
-                  color: _kSky.withOpacity(0.35),
+                  color: _kSky.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -697,7 +698,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                     Container(
                       width: 30, height: 30,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF).withOpacity(0.5),
+                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.engineering,
@@ -771,7 +772,7 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,

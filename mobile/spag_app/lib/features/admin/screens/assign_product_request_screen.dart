@@ -145,7 +145,7 @@ class _AssignProductRequestScreenState
                         width: 140, height: 140,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _kLavender.withOpacity(0.18),
+                          color: _kLavender.withValues(alpha: 0.18),
                         ),
                       ),
                     ),
@@ -155,7 +155,7 @@ class _AssignProductRequestScreenState
                         width: 90, height: 90,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _kMint.withOpacity(0.15),
+                          color: _kMint.withValues(alpha: 0.15),
                         ),
                       ),
                     ),
@@ -169,10 +169,10 @@ class _AssignProductRequestScreenState
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 5),
                             decoration: BoxDecoration(
-                              color: _kMint.withOpacity(0.18),
+                              color: _kMint.withValues(alpha: 0.18),
                               borderRadius: BorderRadius.circular(100),
                               border: Border.all(
-                                  color: _kMint.withOpacity(0.4)),
+                                  color: _kMint.withValues(alpha: 0.4)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -260,7 +260,7 @@ class _AssignProductRequestScreenState
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: _kLavender.withOpacity(0.35),
+                  color: _kLavender.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(26),
                 ),
                 child: Column(
@@ -271,7 +271,7 @@ class _AssignProductRequestScreenState
                       Container(
                         width: 36, height: 36,
                         decoration: BoxDecoration(
-                          color: _kWhite.withOpacity(0.55),
+                          color: _kWhite.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.person_outline_rounded,
@@ -301,7 +301,7 @@ class _AssignProductRequestScreenState
                         hintStyle: const TextStyle(
                             fontSize: 12, color: _kInk2),
                         filled: true,
-                        fillColor: _kWhite.withOpacity(0.6),
+                        fillColor: _kWhite.withValues(alpha: 0.6),
                         prefixIcon: const Icon(Icons.badge_outlined,
                             color: _kInk2, size: 18),
                         contentPadding: const EdgeInsets.symmetric(
@@ -309,7 +309,7 @@ class _AssignProductRequestScreenState
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                              color: _kWhite.withOpacity(0.0)),
+                              color: _kWhite.withValues(alpha: 0.0)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -319,7 +319,7 @@ class _AssignProductRequestScreenState
                         disabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                              color: _kWhite.withOpacity(0.0)),
+                              color: _kWhite.withValues(alpha: 0.0)),
                         ),
                         border: InputBorder.none,
                       ),
@@ -337,14 +337,14 @@ class _AssignProductRequestScreenState
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _kSky.withOpacity(0.35),
+                  color: _kSky.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(children: [
                   Container(
                     width: 32, height: 32,
                     decoration: BoxDecoration(
-                      color: _kWhite.withOpacity(0.55),
+                      color: _kWhite.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.info_outline_rounded,
@@ -374,7 +374,7 @@ class _AssignProductRequestScreenState
                   height: 56,
                   decoration: BoxDecoration(
                     color: _isAssigning
-                        ? _kSage.withOpacity(0.4)
+                        ? _kSage.withValues(alpha: 0.4)
                         : _kDarkPill,
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -425,7 +425,7 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,

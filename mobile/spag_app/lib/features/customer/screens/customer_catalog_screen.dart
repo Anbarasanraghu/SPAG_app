@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../../../core/models/purifier_model.dart';
 import '../../../core/api/purifier_service.dart';
 import '../../auth/services/auth_service.dart';
@@ -130,7 +131,7 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: _sky.withOpacity(0.5),
+                color: _sky.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
@@ -314,7 +315,7 @@ class _CatalogHero extends StatelessWidget {
                 width: 140, height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _sky.withOpacity(0.18),
+                  color: _sky.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -324,7 +325,7 @@ class _CatalogHero extends StatelessWidget {
                 width: 90, height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _mint.withOpacity(0.15),
+                  color: _mint.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -334,7 +335,7 @@ class _CatalogHero extends StatelessWidget {
                 width: 70, height: 70,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _peach.withOpacity(0.12),
+                  color: _peach.withValues(alpha: 0.12),
                 ),
               ),
             ),
@@ -347,9 +348,9 @@ class _CatalogHero extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _sky.withOpacity(0.18),
+                      color: _sky.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: _sky.withOpacity(0.4)),
+                      border: Border.all(color: _sky.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -404,9 +405,9 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.25),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(label,
           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
@@ -539,10 +540,10 @@ class _PurifierCardState extends State<_PurifierCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
-        transform: Matrix4.identity()..scale(_pressed ? 0.98 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.98 : 1.0)),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
-          color: accent.withOpacity(0.35),
+          color: accent.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(26),
         ),
         padding: const EdgeInsets.all(20),
@@ -579,7 +580,7 @@ class _PurifierCardState extends State<_PurifierCard> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _white.withOpacity(0.6),
+                          color: _white.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
@@ -604,7 +605,7 @@ class _PurifierCardState extends State<_PurifierCard> {
                     emoji: '🔧',
                     label: 'Free Services',
                     value: '${m.freeServices}',
-                    bgColor: _white.withOpacity(0.6),
+                    bgColor: _white.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -613,7 +614,7 @@ class _PurifierCardState extends State<_PurifierCard> {
                     emoji: '📅',
                     label: 'Interval',
                     value: '${m.serviceIntervalDays}d',
-                    bgColor: _white.withOpacity(0.6),
+                    bgColor: _white.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -630,7 +631,7 @@ class _PurifierCardState extends State<_PurifierCard> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 140),
                   decoration: BoxDecoration(
-                    color: widget.isDisabled ? _ink.withOpacity(0.1) : _darkPill,
+                    color: widget.isDisabled ? _ink.withValues(alpha: 0.1) : _darkPill,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   alignment: Alignment.center,
@@ -731,7 +732,7 @@ class _LoadingState extends StatelessWidget {
             Container(
               width: 72, height: 72,
               decoration: BoxDecoration(
-                color: _sky.withOpacity(0.4),
+                color: _sky.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Center(
@@ -766,7 +767,7 @@ class _ErrorState extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: _blush.withOpacity(0.4),
+          color: _blush.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -774,7 +775,7 @@ class _ErrorState extends StatelessWidget {
             Container(
               width: 56, height: 56,
               decoration: BoxDecoration(
-                color: _white.withOpacity(0.6),
+                color: _white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Center(
@@ -811,7 +812,7 @@ class _EmptyState extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: _sage.withOpacity(0.35),
+          color: _sage.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -819,7 +820,7 @@ class _EmptyState extends StatelessWidget {
             Container(
               width: 64, height: 64,
               decoration: BoxDecoration(
-                color: _white.withOpacity(0.6),
+                color: _white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Center(
@@ -887,7 +888,7 @@ class _AnonRequestSheetState extends State<_AnonRequestSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: _ink.withOpacity(0.15),
+                color: _ink.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(100),
               ),
             ),
@@ -898,7 +899,7 @@ class _AnonRequestSheetState extends State<_AnonRequestSheet> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _lavender.withOpacity(0.4),
+              color: _lavender.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -977,7 +978,7 @@ class _AnonRequestSheetState extends State<_AnonRequestSheet> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 140),
                 decoration: BoxDecoration(
-                  color: _loading ? _darkPill.withOpacity(0.5) : _darkPill,
+                  color: _loading ? _darkPill.withValues(alpha: 0.5) : _darkPill,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.center,
@@ -1022,7 +1023,7 @@ class _StyledField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _white.withOpacity(0.7),
+        color: _white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(16),
       ),
       child: TextField(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import 'dart:async';
 import '../controller/auth_controller.dart';
 import 'reset_password_screen.dart';
@@ -377,7 +378,7 @@ class _BackBtn extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: _white.withOpacity(0.7),
+          color: _white.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(100),
         ),
         child: const Row(
@@ -422,7 +423,7 @@ class _HeroCard extends StatelessWidget {
               width: 160, height: 160,
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _mint.withOpacity(0.18)),
+                  color: _mint.withValues(alpha: 0.18)),
             ),
           ),
           Positioned(
@@ -431,7 +432,7 @@ class _HeroCard extends StatelessWidget {
               width: 100, height: 100,
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _lavender.withOpacity(0.15)),
+                  color: _lavender.withValues(alpha: 0.15)),
             ),
           ),
           Positioned(
@@ -440,7 +441,7 @@ class _HeroCard extends StatelessWidget {
               width: 80, height: 80,
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _sky.withOpacity(0.12)),
+                  color: _sky.withValues(alpha: 0.12)),
             ),
           ),
           Padding(
@@ -453,9 +454,9 @@ class _HeroCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
-                    color: _mint.withOpacity(0.2),
+                    color: _mint.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: _mint.withOpacity(0.4)),
+                    border: Border.all(color: _mint.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -521,9 +522,9 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.25),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(label,
           style: TextStyle(
@@ -595,7 +596,7 @@ class _FormSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _lavender.withOpacity(0.3),
+            color: _lavender.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(22),
           ),
           child: Column(
@@ -615,7 +616,7 @@ class _FormSection extends StatelessWidget {
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
-                  color: _white.withOpacity(0.75),
+                  color: _white.withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: TextField(
@@ -634,7 +635,7 @@ class _FormSection extends StatelessWidget {
                     hintStyle: TextStyle(
                       fontSize: 22,
                       letterSpacing: 8,
-                      color: _ink.withOpacity(0.15),
+                      color: _ink.withValues(alpha: 0.15),
                       fontWeight: FontWeight.w900,
                     ),
                     border: InputBorder.none,
@@ -708,7 +709,7 @@ class _InfoTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.35),
+        color: color.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -769,7 +770,7 @@ class _ExpiryBar extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 5,
-            backgroundColor: _white.withOpacity(0.5),
+            backgroundColor: _white.withValues(alpha: 0.5),
             valueColor: AlwaysStoppedAnimation<Color>(
               isExpiring ? _blush : _mint,
             ),
@@ -810,10 +811,10 @@ class _VerifyButtonState extends State<_VerifyButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         height: 54,
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isInactive ? _darkPill.withOpacity(0.4) : _darkPill,
+          color: isInactive ? _darkPill.withValues(alpha: 0.4) : _darkPill,
           borderRadius: BorderRadius.circular(18),
         ),
         alignment: Alignment.center,
@@ -862,7 +863,7 @@ class _ResendRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: _sage.withOpacity(0.3),
+        color: _sage.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -912,7 +913,7 @@ class _MiniChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.35),
+        color: color.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

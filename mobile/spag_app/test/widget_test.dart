@@ -19,3 +19,4 @@ void main() {
     expect(find.text('Send OTP'), findsOneWidget);
   });
 }
+

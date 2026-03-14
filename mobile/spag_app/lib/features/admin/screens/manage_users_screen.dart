@@ -120,7 +120,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       Container(
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
-                          color: _kBlush.withOpacity(0.3),
+                          color: _kBlush.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: const Icon(Icons.error_outline,
@@ -154,7 +154,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
-                        color: _kLavender.withOpacity(0.3),
+                        color: _kLavender.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: const Icon(Icons.people_outline,
@@ -198,7 +198,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             width: 140, height: 140,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _kLavender.withOpacity(0.18),
+                              color: _kLavender.withValues(alpha: 0.18),
                             ),
                           ),
                         ),
@@ -208,7 +208,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             width: 90, height: 90,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _kMint.withOpacity(0.15),
+                              color: _kMint.withValues(alpha: 0.15),
                             ),
                           ),
                         ),
@@ -221,10 +221,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: _kMint.withOpacity(0.18),
+                                  color: _kMint.withValues(alpha: 0.18),
                                   borderRadius: BorderRadius.circular(100),
                                   border: Border.all(
-                                      color: _kMint.withOpacity(0.4)),
+                                      color: _kMint.withValues(alpha: 0.4)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -316,7 +316,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.38),
+                            color: color.withValues(alpha: 0.38),
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: Row(
@@ -326,7 +326,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                               Container(
                                 width: 48, height: 48,
                                 decoration: BoxDecoration(
-                                  color: _kWhite.withOpacity(0.5),
+                                  color: _kWhite.withValues(alpha: 0.5),
                                   borderRadius: BorderRadius.circular(15),
                                 ),
                                 child: Center(
@@ -359,7 +359,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                         width: 18, height: 18,
                                         decoration: BoxDecoration(
                                           color:
-                                              _kWhite.withOpacity(0.5),
+                                              _kWhite.withValues(alpha: 0.5),
                                           borderRadius:
                                               BorderRadius.circular(6),
                                         ),
@@ -383,7 +383,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: _kWhite.withOpacity(0.55),
+                                  color: _kWhite.withValues(alpha: 0.55),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: DropdownButton<String>(
@@ -465,7 +465,7 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,

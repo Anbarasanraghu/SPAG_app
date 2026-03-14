@@ -115,7 +115,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.18),
+        color: accent.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -125,7 +125,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(
-                color: _kWhite.withOpacity(0.55),
+                color: _kWhite.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: _kInk, size: 18),
@@ -155,7 +155,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           Container(
             width: 28, height: 28,
             decoration: BoxDecoration(
-              color: _kWhite.withOpacity(0.5),
+              color: _kWhite.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(9),
             ),
             child: Icon(icon, size: 13, color: _kInk2),
@@ -218,7 +218,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         Container(
                           padding: const EdgeInsets.all(22),
                           decoration: BoxDecoration(
-                            color: _kLavender.withOpacity(0.3),
+                            color: _kLavender.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: const Icon(Icons.info_outline,
@@ -263,7 +263,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                   width: 140, height: 140,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _kLavender.withOpacity(0.18),
+                                    color: _kLavender.withValues(alpha: 0.18),
                                   ),
                                 ),
                               ),
@@ -273,7 +273,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                   width: 90, height: 90,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _kMint.withOpacity(0.15),
+                                    color: _kMint.withValues(alpha: 0.15),
                                   ),
                                 ),
                               ),
@@ -289,12 +289,12 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                           const EdgeInsets.symmetric(
                                               horizontal: 12, vertical: 5),
                                       decoration: BoxDecoration(
-                                        color: _kMint.withOpacity(0.18),
+                                        color: _kMint.withValues(alpha: 0.18),
                                         borderRadius:
                                             BorderRadius.circular(100),
                                         border: Border.all(
                                             color:
-                                                _kMint.withOpacity(0.4)),
+                                                _kMint.withValues(alpha: 0.4)),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -514,7 +514,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: _kWhite
-                                                .withOpacity(0.45),
+                                                .withValues(alpha: 0.45),
                                             borderRadius:
                                                 BorderRadius.circular(14),
                                           ),
@@ -560,7 +560,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                                           vertical: 4),
                                                   decoration: BoxDecoration(
                                                     color: _kLavender
-                                                        .withOpacity(0.3),
+                                                        .withValues(alpha: 0.3),
                                                     borderRadius:
                                                         BorderRadius
                                                             .circular(8),
@@ -598,7 +598,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color:
-                                            _kWhite.withOpacity(0.45),
+                                            _kWhite.withValues(alpha: 0.45),
                                         borderRadius:
                                             BorderRadius.circular(14),
                                       ),
@@ -638,7 +638,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                                       vertical: 4),
                                               decoration: BoxDecoration(
                                                 color: _kMint
-                                                    .withOpacity(0.3),
+                                                    .withValues(alpha: 0.3),
                                                 borderRadius:
                                                     BorderRadius.circular(
                                                         8),
@@ -684,7 +684,7 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,

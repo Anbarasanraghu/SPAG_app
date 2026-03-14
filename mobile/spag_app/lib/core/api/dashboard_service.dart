@@ -64,3 +64,4 @@ class DashboardService {
     return dashboard;
   }
 }
+

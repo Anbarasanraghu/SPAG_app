@@ -164,7 +164,7 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: _sky.withOpacity(0.5),
+                color: _sky.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
@@ -202,7 +202,7 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
       icon: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: const Color(0xFF2A8FD4).withOpacity(0.1),
+          color: const Color(0xFF2A8FD4).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.dashboard_rounded, size: 20, color: Color(0xFF2A8FD4)),
@@ -265,7 +265,7 @@ class _FloatingNavBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.18),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -286,7 +286,7 @@ class _FloatingNavBar extends StatelessWidget {
                     horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? item.color.withOpacity(0.22)
+                      ? item.color.withValues(alpha: 0.22)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),

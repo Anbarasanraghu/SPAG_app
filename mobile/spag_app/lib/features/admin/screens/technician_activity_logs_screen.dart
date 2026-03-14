@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/service_logs_service.dart';
 import 'customer_detail_screen.dart';
 
@@ -110,7 +111,7 @@ class _TechnicianActivityLogsScreenState
                         Container(
                           padding: const EdgeInsets.all(22),
                           decoration: BoxDecoration(
-                            color: _kSage.withOpacity(0.3),
+                            color: _kSage.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: const Icon(Icons.run_circle_outlined,
@@ -155,7 +156,7 @@ class _TechnicianActivityLogsScreenState
                                   width: 140, height: 140,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _kLavender.withOpacity(0.18),
+                                    color: _kLavender.withValues(alpha: 0.18),
                                   ),
                                 ),
                               ),
@@ -165,7 +166,7 @@ class _TechnicianActivityLogsScreenState
                                   width: 90, height: 90,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _kMint.withOpacity(0.15),
+                                    color: _kMint.withValues(alpha: 0.15),
                                   ),
                                 ),
                               ),
@@ -180,12 +181,12 @@ class _TechnicianActivityLogsScreenState
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 12, vertical: 5),
                                       decoration: BoxDecoration(
-                                        color: _kMint.withOpacity(0.18),
+                                        color: _kMint.withValues(alpha: 0.18),
                                         borderRadius:
                                             BorderRadius.circular(100),
                                         border: Border.all(
                                             color:
-                                                _kMint.withOpacity(0.4)),
+                                                _kMint.withValues(alpha: 0.4)),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -357,11 +358,11 @@ class _LogCardState extends State<_LogCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: widget.color.withOpacity(0.38),
+          color: widget.color.withValues(alpha: 0.38),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
@@ -372,7 +373,7 @@ class _LogCardState extends State<_LogCard> {
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: _kWhite.withOpacity(0.5),
+                color: _kWhite.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(Icons.run_circle,
@@ -400,7 +401,7 @@ class _LogCardState extends State<_LogCard> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _kWhite.withOpacity(0.5),
+                        color: _kWhite.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -416,7 +417,7 @@ class _LogCardState extends State<_LogCard> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _kWhite.withOpacity(0.5),
+                        color: _kWhite.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -439,7 +440,7 @@ class _LogCardState extends State<_LogCard> {
               Container(
                 width: 30, height: 30,
                 decoration: BoxDecoration(
-                  color: _kWhite.withOpacity(0.6),
+                  color: _kWhite.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.arrow_forward_ios,
@@ -465,7 +466,7 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,

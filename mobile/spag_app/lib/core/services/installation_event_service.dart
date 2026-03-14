@@ -31,3 +31,4 @@ class InstallationEventService {
     _installationCompleted.value = null;
   }
 }
+

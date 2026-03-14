@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../../../core/api/admin_dashboard_service.dart';
 import '../../../core/models/admin_dashboard.dart';
 import '../../../core/services/installation_event_service.dart';
@@ -217,7 +218,7 @@ class HeroCard extends StatelessWidget {
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: kLavender.withOpacity(0.18),
+                  color: kLavender.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -229,7 +230,7 @@ class HeroCard extends StatelessWidget {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: kMint.withOpacity(0.15),
+                  color: kMint.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -242,9 +243,9 @@ class HeroCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: kMint.withOpacity(0.18),
+                      color: kMint.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: kMint.withOpacity(0.4)),
+                      border: Border.all(color: kMint.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -474,7 +475,7 @@ class MiniInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.35),
+        color: color.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -647,10 +648,10 @@ class ActionCardState extends State<ActionCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         padding: const EdgeInsets.all(18),
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
-          color: widget.data.color.withOpacity(_pressed ? 0.75 : 0.4),
+          color: widget.data.color.withValues(alpha: _pressed ? 0.75 : 0.4),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -665,7 +666,7 @@ class ActionCardState extends State<ActionCard> {
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: kWhite.withOpacity(0.6),
+                    color: kWhite.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.arrow_forward_ios_rounded,
@@ -703,7 +704,7 @@ class BentoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.45),
+        color: color.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(26),
       ),
       child: child,
@@ -721,7 +722,7 @@ class SmallBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.55),
+        color: kWhite.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(label,
@@ -750,7 +751,7 @@ class MiniBarChart extends StatelessWidget {
                   width: 10,
                   height: h,
                   decoration: BoxDecoration(
-                    color: kInk.withOpacity(0.2),
+                    color: kInk.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -780,7 +781,7 @@ class _AdditionalMetricsRow extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: kSky.withOpacity(0.35),
+                color: kSky.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -807,7 +808,7 @@ class _AdditionalMetricsRow extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: kPeach.withOpacity(0.35),
+                color: kPeach.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(

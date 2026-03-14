@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/installation_service.dart';
 import '../models/installation_job.dart';
 
@@ -117,7 +118,7 @@ class _InstallationJobsScreenState extends State<InstallationJobsScreen> {
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: _white.withOpacity(0.85),
+          color: _white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(14),
         ),
         child: TextField(
@@ -179,7 +180,7 @@ class _InstallationJobsScreenState extends State<InstallationJobsScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: _ink.withOpacity(0.15),
+                        color: _ink.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(100),
                       ),
                     ),
@@ -192,7 +193,7 @@ class _InstallationJobsScreenState extends State<InstallationJobsScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: _mint.withOpacity(0.4),
+                            color: _mint.withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Text('🔧',
@@ -418,7 +419,7 @@ class _HeroHeader extends StatelessWidget {
                 height: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _mint.withOpacity(0.15),
+                  color: _mint.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -430,7 +431,7 @@ class _HeroHeader extends StatelessWidget {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _lavender.withOpacity(0.12),
+                  color: _lavender.withValues(alpha: 0.12),
                 ),
               ),
             ),
@@ -446,9 +447,9 @@ class _HeroHeader extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _mint.withOpacity(0.18),
+                      color: _mint.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: _mint.withOpacity(0.4)),
+                      border: Border.all(color: _mint.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -511,9 +512,9 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withOpacity(0.45)),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Text(
         label,
@@ -551,7 +552,7 @@ class _JobCardState extends State<_JobCard> {
 
     return Container(
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.38),
+        color: accent.withValues(alpha: 0.38),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -567,7 +568,7 @@ class _JobCardState extends State<_JobCard> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.55),
+                    color: accent.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: const Center(
@@ -597,7 +598,7 @@ class _JobCardState extends State<_JobCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _darkPill.withOpacity(0.08),
+                          color: _darkPill.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
@@ -621,7 +622,7 @@ class _JobCardState extends State<_JobCard> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _white.withOpacity(0.65),
+                    color: _white.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -640,7 +641,7 @@ class _JobCardState extends State<_JobCard> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Divider(
-                color: _ink.withOpacity(0.08), height: 1, thickness: 1),
+                color: _ink.withValues(alpha: 0.08), height: 1, thickness: 1),
           ),
 
           // ── Detail rows ──────────────────────────────────────────────
@@ -679,11 +680,11 @@ class _JobCardState extends State<_JobCard> {
                 duration: const Duration(milliseconds: 130),
                 height: 50,
                 transform: Matrix4.identity()
-                  ..scale(_pressed ? 0.97 : 1.0),
+                  ..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
                 transformAlignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: _pressed
-                      ? _darkPill.withOpacity(0.82)
+                      ? _darkPill.withValues(alpha: 0.82)
                       : _darkPill,
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -728,7 +729,7 @@ class _DetailRow extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: _white.withOpacity(0.6),
+        color: _white.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(13),
       ),
       child: Row(
@@ -775,7 +776,7 @@ class _FormSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.3),
+        color: color.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -821,10 +822,10 @@ class _PillButtonState extends State<_PillButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 130),
         height: 54,
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
-          color: _pressed ? _darkPill.withOpacity(0.82) : _darkPill,
+          color: _pressed ? _darkPill.withValues(alpha: 0.82) : _darkPill,
           borderRadius: BorderRadius.circular(18),
         ),
         alignment: Alignment.center,
@@ -892,7 +893,7 @@ class _ErrorState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                color: _blush.withOpacity(0.5),
+                color: _blush.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: const Text('❌', style: TextStyle(fontSize: 32)),
@@ -936,7 +937,7 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(26),
               decoration: BoxDecoration(
-                color: _sage.withOpacity(0.4),
+                color: _sage.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Text('🎉', style: TextStyle(fontSize: 40)),

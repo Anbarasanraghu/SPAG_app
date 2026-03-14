@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../../../core/ui/ui_kit.dart';
 import '../../auth/services/auth_service.dart';
 import '../../customer/services/customer_profile_service.dart';
@@ -170,7 +171,7 @@ class _ProfileTabState extends State<ProfileTab> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: _lavender.withOpacity(0.4),
+              color: _lavender.withValues(alpha: 0.4),
               shape: BoxShape.circle,
             ),
             child: const Center(
@@ -209,7 +210,7 @@ class _ProfileTabState extends State<ProfileTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _peach.withOpacity(0.3),
+              color: _peach.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Row(
@@ -256,10 +257,10 @@ class _ProfileTabState extends State<ProfileTab> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: _roleColor.withOpacity(0.25),
+                    color: _roleColor.withValues(alpha: 0.25),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: _roleColor.withOpacity(0.5), width: 2),
+                        color: _roleColor.withValues(alpha: 0.5), width: 2),
                   ),
                   child: Center(
                     child: Text(_roleEmoji,
@@ -271,10 +272,10 @@ class _ProfileTabState extends State<ProfileTab> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _roleColor.withOpacity(0.2),
+                    color: _roleColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
-                        color: _roleColor.withOpacity(0.4)),
+                        color: _roleColor.withValues(alpha: 0.4)),
                   ),
                   child: Text(
                     _roleLabel,
@@ -304,7 +305,7 @@ class _ProfileTabState extends State<ProfileTab> {
           _ProfileButton(
             label: 'Open Dashboard',
             emoji: '📊',
-            color: _roleColor.withOpacity(0.4),
+            color: _roleColor.withValues(alpha: 0.4),
             textColor: _ink,
             onTap: _goToDashboard,
           ),
@@ -330,7 +331,7 @@ class _ProfileTabState extends State<ProfileTab> {
           _ProfileButton(
             label: 'Logout',
             emoji: '🚪',
-            color: _blush.withOpacity(0.4),
+            color: _blush.withValues(alpha: 0.4),
             textColor: const Color(0xFFB03050),
             onTap: _logout,
           ),
@@ -373,7 +374,7 @@ class _ProfileButtonState extends State<_ProfileButton> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 130),
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -419,7 +420,7 @@ class _InfoTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.25),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

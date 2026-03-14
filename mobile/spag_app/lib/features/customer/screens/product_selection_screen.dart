@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/ui/ui_kit.dart';
 import 'customer_catalog_screen.dart';
+import 'my_requests_screen.dart';
+import 'profile_tab.dart';
 
 // ─── PALETTE (matches CustomerMainScreen) ────────────────────────────────────
 const _bgColor = Color(0xFFF5F4F0);
@@ -15,14 +17,40 @@ const _mint = Color(0xFFBDF0D8);
 const _sky = Color(0xFFBFE0F5);
 const _peach = Color(0xFFF8DBBF);
 
-class ProductSelectionScreen extends StatelessWidget {
+class ProductSelectionScreen extends StatefulWidget {
   const ProductSelectionScreen({super.key});
+
+  @override
+  State<ProductSelectionScreen> createState() => _ProductSelectionScreenState();
+}
+
+class _ProductSelectionScreenState extends State<ProductSelectionScreen> {
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgColor,
-      bottomNavigationBar: const SpagFooterLogo(),
+      bottomNavigationBar: _FloatingNavBar(
+        currentIndex: _currentIndex,
+        items: _navItems,
+        onTap: (i) {
+          setState(() => _currentIndex = i);
+          if (i == 0) return;
+          if (i == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const MyRequestsScreen()),
+            );
+          }
+          if (i == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileTab()),
+            );
+          }
+        },
+      ),
       body: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -101,7 +129,7 @@ class _Header extends StatelessWidget {
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _sky.withOpacity(0.18),
+                  color: _sky.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -113,7 +141,7 @@ class _Header extends StatelessWidget {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _mint.withOpacity(0.15),
+                  color: _mint.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -165,9 +193,9 @@ class _HeaderPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.25),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(label,
           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
@@ -196,7 +224,7 @@ class _ProductCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: accent.withOpacity(0.25),
+          color: accent.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(22),
         ),
         padding: const EdgeInsets.all(18),
@@ -312,7 +340,7 @@ class _WaterLevelIndicatorScreenState extends State<WaterLevelIndicatorScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
@@ -332,7 +360,7 @@ class _WaterLevelIndicatorScreenState extends State<WaterLevelIndicatorScreen> {
                           height: 220,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: _ink2.withOpacity(0.3), width: 2),
+                            border: Border.all(color: _ink2.withValues(alpha: 0.3), width: 2),
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
@@ -402,3 +430,97 @@ class _WaterLevelIndicatorScreenState extends State<WaterLevelIndicatorScreen> {
     );
   }
 }
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _NavItem({required this.icon, required this.label, required this.color});
+}
+
+const _navItems = [
+  _NavItem(icon: Icons.home_rounded, label: 'Products', color: _lavender),
+  _NavItem(icon: Icons.list_alt_rounded, label: 'Requests', color: _mint),
+  _NavItem(icon: Icons.person_rounded, label: 'Profile', color: _peach),
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FLOATING PILL NAVBAR
+// ─────────────────────────────────────────────────────────────────────────────
+class _FloatingNavBar extends StatelessWidget {
+  final int currentIndex;
+  final List<_NavItem> items;
+  final ValueChanged<int> onTap;
+
+  const _FloatingNavBar({
+    required this.currentIndex,
+    required this.items,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Container(
+        height: 68,
+        decoration: BoxDecoration(
+          color: _darkPill,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(items.length, (i) {
+            final item = items[i];
+            final isSelected = i == currentIndex;
+            return GestureDetector(
+              onTap: () => onTap(i),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? item.color.withValues(alpha: 0.22)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: isSelected ? item.color : _ink2,
+                      size: 22,
+                    ),
+                    if (isSelected) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          color: item.color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+

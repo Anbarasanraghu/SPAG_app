@@ -60,3 +60,4 @@ class AuthApi {
     return jsonDecode(response.body);
   }
 }
+

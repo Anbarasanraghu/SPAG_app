@@ -59,3 +59,4 @@ class AuthController {
     await AuthApi.resetPassword(phone, newPassword);
   }
 }
+

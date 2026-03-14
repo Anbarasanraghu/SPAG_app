@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import 'dart:math' as math;
 import '../models/technician_service.dart';
 import '../services/technician_api.dart';
@@ -408,7 +409,7 @@ class _HeroHeader extends StatelessWidget {
                 width: 130, height: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _lavender.withOpacity(0.15),
+                  color: _lavender.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -418,7 +419,7 @@ class _HeroHeader extends StatelessWidget {
                 width: 80, height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _mint.withOpacity(0.12),
+                  color: _mint.withValues(alpha: 0.12),
                 ),
               ),
             ),
@@ -432,9 +433,9 @@ class _HeroHeader extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _mint.withOpacity(0.18),
+                      color: _mint.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: _mint.withOpacity(0.4)),
+                      border: Border.all(color: _mint.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -493,9 +494,9 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.22),
+        color: color.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withOpacity(0.45)),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Text(label,
           style: TextStyle(
@@ -561,7 +562,7 @@ class _ServicesList extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _lavender.withOpacity(0.4),
+                  color: _lavender.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
@@ -699,7 +700,7 @@ class _ServiceCardState extends State<_ServiceCard> {
       onTap: () => widget.onShowDetails(s),
       child: Container(
         decoration: BoxDecoration(
-          color: accent.withOpacity(0.38),
+          color: accent.withValues(alpha: 0.38),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -713,7 +714,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                   Container(
                     width: 46, height: 46,
                     decoration: BoxDecoration(
-                      color: accent.withOpacity(0.55),
+                      color: accent.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Center(
@@ -750,7 +751,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: _white.withOpacity(0.55),
+                      color: _white.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.arrow_forward_ios_rounded,
@@ -762,7 +763,7 @@ class _ServiceCardState extends State<_ServiceCard> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Divider(
-                  color: _ink.withOpacity(0.08), height: 1, thickness: 1),
+                  color: _ink.withValues(alpha: 0.08), height: 1, thickness: 1),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -771,7 +772,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: _white.withOpacity(0.6),
+                  color: _white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: Row(
@@ -809,11 +810,11 @@ class _ServiceCardState extends State<_ServiceCard> {
                   duration: const Duration(milliseconds: 130),
                   height: 48,
                   transform: Matrix4.identity()
-                    ..scale(_pressed ? 0.97 : 1.0),
+                    ..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
                   transformAlignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: _pressed
-                        ? _darkPill.withOpacity(0.82)
+                        ? _darkPill.withValues(alpha: 0.82)
                         : _darkPill,
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -863,11 +864,11 @@ class _InstallationCardState extends State<_InstallationCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 130),
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: _sky.withOpacity(0.4),
+          color: _sky.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(22),
         ),
         child: Row(
@@ -875,7 +876,7 @@ class _InstallationCardState extends State<_InstallationCard> {
             Container(
               width: 46, height: 46,
               decoration: BoxDecoration(
-                color: _sky.withOpacity(0.6),
+                color: _sky.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Center(
@@ -905,7 +906,7 @@ class _InstallationCardState extends State<_InstallationCard> {
             Container(
               width: 30, height: 30,
               decoration: BoxDecoration(
-                color: _white.withOpacity(0.6),
+                color: _white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.arrow_forward_ios_rounded,
@@ -928,7 +929,7 @@ class _EmptyBento extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: _sage.withOpacity(0.35),
+        color: _sage.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -936,7 +937,7 @@ class _EmptyBento extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: _sage.withOpacity(0.5),
+              color: _sage.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: const Text('🎉', style: TextStyle(fontSize: 36)),
@@ -980,7 +981,7 @@ class _ConfirmDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: _peach.withOpacity(0.4),
+                color: _peach.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Text('✅', style: TextStyle(fontSize: 32)),
@@ -1008,7 +1009,7 @@ class _ConfirmDialog extends StatelessWidget {
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
-                        color: _ink.withOpacity(0.06),
+                        color: _ink.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       alignment: Alignment.center,
@@ -1073,7 +1074,7 @@ class _CustomerBottomSheet extends StatelessWidget {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: _ink.withOpacity(0.15),
+                color: _ink.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(100),
               ),
             ),
@@ -1084,7 +1085,7 @@ class _CustomerBottomSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _lavender.withOpacity(0.4),
+                  color: _lavender.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Text('👤', style: TextStyle(fontSize: 24)),
@@ -1154,7 +1155,7 @@ class _InfoTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.3),
+        color: color.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -1290,7 +1291,7 @@ class _ErrorState extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: _blush.withOpacity(0.5),
+                  color: _blush.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: const Text('❌', style: TextStyle(fontSize: 32)),
@@ -1338,7 +1339,7 @@ class _RetryButtonState extends State<_RetryButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 130),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
           color: _darkPill,
@@ -1382,7 +1383,7 @@ class _RefreshFab extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: _darkPill.withOpacity(0.3),
+                color: _darkPill.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../controller/auth_controller.dart';
 import '../../auth/services/auth_service.dart';
 import '../../customer/screens/customer_main_screen.dart';
@@ -243,7 +244,7 @@ class _HeroCard extends StatelessWidget {
                 height: 160,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _lavender.withOpacity(0.18),
+                  color: _lavender.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -255,7 +256,7 @@ class _HeroCard extends StatelessWidget {
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _mint.withOpacity(0.15),
+                  color: _mint.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -267,7 +268,7 @@ class _HeroCard extends StatelessWidget {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _peach.withOpacity(0.12),
+                  color: _peach.withValues(alpha: 0.12),
                 ),
               ),
             ),
@@ -284,9 +285,9 @@ class _HeroCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _mint.withOpacity(0.18),
+                      color: _mint.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: _mint.withOpacity(0.4)),
+                      border: Border.all(color: _mint.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -359,9 +360,9 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.25),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(label,
           style: TextStyle(
@@ -446,7 +447,7 @@ class _FormCard extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: _peach.withOpacity(0.4),
+                color: _peach.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(100),
               ),
               child: const Text(
@@ -505,7 +506,7 @@ class _BentoField extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.3),
+        color: accentColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
@@ -552,7 +553,7 @@ class _StyledInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _white.withOpacity(0.75),
+        color: _white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -610,10 +611,10 @@ class _LoginButtonState extends State<_LoginButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         height: 54,
-        transform: Matrix4.identity()..scale(_pressed ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByVector3(vm.Vector3.all(_pressed ? 0.97 : 1.0)),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
-          color: widget.loading ? _darkPill.withOpacity(0.5) : _darkPill,
+          color: widget.loading ? _darkPill.withValues(alpha: 0.5) : _darkPill,
           borderRadius: BorderRadius.circular(18),
         ),
         alignment: Alignment.center,
@@ -660,7 +661,7 @@ class _MiniChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.35),
+        color: color.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

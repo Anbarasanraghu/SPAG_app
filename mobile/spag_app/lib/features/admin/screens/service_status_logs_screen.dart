@@ -168,7 +168,7 @@ class _SerKaNCgLvMEXxNzMxj2F7FYi1AdRrTo6Nhu extends State<ServiceStatusLogsScree
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -241,10 +241,10 @@ class _SerKaNCgLvMEXxNzMxj2F7FYi1AdRrTo6Nhu extends State<ServiceStatusLogsScree
                                                   vertical: 6,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: _getStatusColor(newStatus).withOpacity(0.1),
+                                                  color: _getStatusColor(newStatus).withValues(alpha: 0.1),
                                                   borderRadius: BorderRadius.circular(8),
                                                   border: Border.all(
-                                                    color: _getStatusColor(newStatus).withOpacity(0.3),
+                                                    color: _getStatusColor(newStatus).withValues(alpha: 0.3),
                                                     width: 1.5,
                                                   ),
                                                 ),

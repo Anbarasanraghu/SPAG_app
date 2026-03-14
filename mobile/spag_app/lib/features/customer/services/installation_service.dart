@@ -61,3 +61,4 @@ class InstallationService {
   static dynamic get installationUpdatedNotifier =>
       InstallationEventService.installationCompletedNotifier;
 }
+
