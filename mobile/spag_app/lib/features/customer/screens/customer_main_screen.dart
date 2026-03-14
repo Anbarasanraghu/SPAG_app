@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'customer_catalog_screen.dart';
+import 'product_selection_screen.dart';
 import 'my_requests_screen.dart';
 import 'profile_tab.dart';
 import '../../auth/services/auth_service.dart';
@@ -44,14 +45,14 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
   }
 
   List<Widget> get _pages => <Widget>[
-    const CustomerCatalogScreen(),
+    const ProductSelectionScreen(),
     const MyRequestsScreen(),
     const ProfileTab(),
   ];
 
   // Nav items config
   static const _navItems = [
-    _NavItem(icon: Icons.home_rounded,        label: 'Catalog',  color: _lavender),
+    _NavItem(icon: Icons.home_rounded,        label: 'Products', color: _lavender),
     _NavItem(icon: Icons.list_alt_rounded,    label: 'Requests', color: _mint),
     _NavItem(icon: Icons.person_rounded,      label: 'Profile',  color: _peach),
   ];
@@ -77,7 +78,7 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final titles = ['Catalog', 'My Requests', 'Profile'];
+    final titles = ['Products', 'My Requests', 'Profile'];
 
     return AppBar(
       backgroundColor: _bg,

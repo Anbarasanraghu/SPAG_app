@@ -5,6 +5,7 @@ import '../../../core/api/purifier_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/controller/auth_controller.dart';
 import 'customer_home_decider_screen.dart';
+import 'product_selection_screen.dart';
 
 // ─── PALETTE (matches Admin Dashboard) ───────────────────────────────────────
 const _bg       = Color(0xFFF5F4F0);
@@ -34,6 +35,13 @@ class CustomerCatalogScreen extends StatefulWidget {
 class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
   late Future<List<PurifierModel>> _modelsFuture;
   int? _requestingId;
+  String? role;
+
+  Future<void> _loadRole() async {
+    final r = await AuthService.getRole();
+    if (!mounted) return;
+    setState(() => role = r);
+  }
 
   // ── COLOUR CONSTANTS ─────────────────────────────────────
   static const Color _bg        = Color(0xFFF5F9FF);
@@ -62,6 +70,78 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
       debugPrint("[CustomerCatalog] Error loading models: $e");
       throw e;
     });
+
+    _loadRole();
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    final titles = ['Products', 'My Requests', 'Profile'];
+
+    return AppBar(
+      backgroundColor: _bg,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        color: _ink,
+        onPressed: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const ProductSelectionScreen()),
+          );
+        },
+      ),
+      title: Text(
+        titles[0],
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: _ink,
+          letterSpacing: -0.5,
+        ),
+      ),
+      actions: [
+        if (role == null) ...[
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/login'),
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: _darkPill,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: const Text(
+                'Login',
+                style: TextStyle(
+                  color: _white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ] else ...[
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/customer-dashboard'),
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _sky.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.dashboard_rounded,
+                color: _ink,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   Future<void> _request(int id) async {
@@ -137,6 +217,7 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
     ));
 
     return Scaffold(
+      appBar: _buildAppBar(),
       backgroundColor: _bg,
       body: SafeArea(
         child: RefreshIndicator(
