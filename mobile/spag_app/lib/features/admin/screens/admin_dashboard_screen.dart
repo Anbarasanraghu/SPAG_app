@@ -575,7 +575,7 @@ class ActionGrid extends StatelessWidget {
       _ActionData(
           'Product Requests',
           'Handle requests',
-          '📦',
+          '�',
           kBlush,
           () => Navigator.push(
               context,

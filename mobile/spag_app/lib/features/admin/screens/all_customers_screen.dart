@@ -39,6 +39,12 @@ class AllCustomersScreen extends StatefulWidget {
 class _AllCustomersScreenState extends State<AllCustomersScreen> {
   bool _loading = true;
   List<AdminCustomer> _customers = [];
+  String _searchQuery = '';
+
+  List<AdminCustomer> get _filteredCustomers => _customers.where((c) =>
+      c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      c.phone.contains(_searchQuery) ||
+      c.address.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
   @override
   void initState() {
@@ -134,12 +140,33 @@ class _AllCustomersScreenState extends State<AllCustomersScreen> {
                         _SectionTitle('Customer List'),
                         const SizedBox(height: 12),
 
-                        // ── 5. Customer Cards ──────────────────────────────
+                        // ── 5. Search Bar ───────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search customers...',
+                              prefixIcon: const Icon(Icons.search, color: _kInk2),
+                              filled: true,
+                              fillColor: _kWhite.withValues(alpha: 0.8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            style: const TextStyle(color: _kInk, fontSize: 14),
+                            onChanged: (value) => setState(() => _searchQuery = value),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // ── 6. Customer Cards ──────────────────────────────
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
-                            children: List.generate(_customers.length, (i) {
-                              final c = _customers[i];
+                            children: List.generate(_filteredCustomers.length, (i) {
+                              final c = _filteredCustomers[i];
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: _CustomerCard(
@@ -329,102 +356,201 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Large left bento — total customers
-          Expanded(
-            flex: 5,
-            child: _BentoCard(
-              color: _kLavender,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Total Customers',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: _kInk2)),
-                  const SizedBox(height: 6),
-                  Text('$total',
-                      style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w900,
-                          color: _kInk,
-                          height: 1,
-                          letterSpacing: -2)),
-                  const SizedBox(height: 10),
-                  _SmallBadge(
-                      label: '+2 this month ↑',
-                      textColor: const Color(0xFF4A3C8C)),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Right column — two small bentos
-          Expanded(
-            flex: 4,
-            child: Column(
+      child: isMobile
+          ? Column(
               children: [
+                // Total customers
                 _BentoCard(
-                  color: _kMintCard,
+                  color: _kLavender,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Active',
+                      const Text('Total Customers',
                           style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: _kInk2)),
                       const SizedBox(height: 6),
-                      const Text('4',
-                          style: TextStyle(
+                      Text('$total',
+                          style: const TextStyle(
                               fontSize: 40,
                               fontWeight: FontWeight.w900,
                               color: _kInk,
                               height: 1,
                               letterSpacing: -2)),
-                      const SizedBox(height: 8),
-                      const _SmallBadge(
-                          label: 'online',
-                          textColor: Color(0xFF1A6B48)),
+                      const SizedBox(height: 10),
+                      _SmallBadge(
+                          label: '+2 this month ↑',
+                          textColor: const Color(0xFF4A3C8C)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                _BentoCard(
-                  color: _kBlush,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Active and Areas in row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _BentoCard(
+                        color: _kMintCard,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Active',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: _kInk2)),
+                            const SizedBox(height: 6),
+                            const Text('4',
+                                style: TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.w900,
+                                    color: _kInk,
+                                    height: 1,
+                                    letterSpacing: -2)),
+                            const SizedBox(height: 8),
+                            const _SmallBadge(
+                                label: 'online',
+                                textColor: Color(0xFF1A6B48)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _BentoCard(
+                        color: _kBlush,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Areas',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: _kInk2)),
+                            const SizedBox(height: 6),
+                            const Text('3',
+                                style: TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.w900,
+                                    color: _kInk,
+                                    height: 1,
+                                    letterSpacing: -2)),
+                            const SizedBox(height: 8),
+                            const _SmallBadge(
+                                label: 'zones',
+                                textColor: Color(0xFF8B3047)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Large left bento — total customers
+                Expanded(
+                  flex: 5,
+                  child: _BentoCard(
+                    color: _kLavender,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Total Customers',
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _kInk2)),
+                        const SizedBox(height: 6),
+                        Text('$total',
+                            style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w900,
+                                color: _kInk,
+                                height: 1,
+                                letterSpacing: -2)),
+                        const SizedBox(height: 10),
+                        _SmallBadge(
+                            label: '+2 this month ↑',
+                            textColor: const Color(0xFF4A3C8C)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Right column — two small bentos side by side
+                Expanded(
+                  flex: 4,
+                  child: Row(
                     children: [
-                      const Text('Areas',
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: _kInk2)),
-                      const SizedBox(height: 6),
-                      const Text('3',
-                          style: TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.w900,
-                              color: _kInk,
-                              height: 1,
-                              letterSpacing: -2)),
-                      const SizedBox(height: 8),
-                      const _SmallBadge(
-                          label: 'zones',
-                          textColor: Color(0xFF8B3047)),
+                      Expanded(
+                        child: _BentoCard(
+                          color: _kMintCard,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Active',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: _kInk2)),
+                              const SizedBox(height: 6),
+                              const Text('4',
+                                  style: TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.w900,
+                                      color: _kInk,
+                                      height: 1,
+                                      letterSpacing: -2)),
+                              const SizedBox(height: 8),
+                              const _SmallBadge(
+                                  label: 'online',
+                                  textColor: Color(0xFF1A6B48)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _BentoCard(
+                          color: _kBlush,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Areas',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: _kInk2)),
+                              const SizedBox(height: 6),
+                              const Text('3',
+                                  style: TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.w900,
+                                      color: _kInk,
+                                      height: 1,
+                                      letterSpacing: -2)),
+                              const SizedBox(height: 8),
+                              const _SmallBadge(
+                                  label: 'zones',
+                                  textColor: Color(0xFF8B3047)),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
