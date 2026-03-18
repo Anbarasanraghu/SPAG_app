@@ -22,6 +22,7 @@ class BentoCard extends StatelessWidget {
     );
   }
 }
+
 // ─── PALETTE ────────────────────────────────────────────────────────────────
 const Color kBg       = Color(0xFFF5F4F0);
 const Color kWhite    = Color(0xFFFFFFFF);
@@ -186,7 +187,7 @@ class StyledInput extends StatelessWidget {
   }
 }
 
-// ─── LOGIN BUTTON ───────────────────────────────────────────────────────────
+// ─── PILL BUTTON ────────────────────────────────────────────────────────────
 class PillButton extends StatefulWidget {
   final bool loading;
   final VoidCallback onTap;
@@ -251,65 +252,253 @@ class _PillButtonState extends State<PillButton> {
   }
 }
 
-// ─── SPAG FOOTER LOGO ──────────────────────────────────────────────────────
-class SpagFooterLogo extends StatelessWidget {
-  const SpagFooterLogo({super.key});
+// ─── SPAG CORNER BADGE (Compact) ───────────────────────────────────────
+//
+// A small badge suitable for placing in AppBar actions or a top-right corner.
+// Use in AppBar actions wherever you want the brand identity visible.
+//
+// Usage: const SpagCornerBadge()
+//
+class SpagCornerBadge extends StatelessWidget {
+  final bool darkSurface;
+  const SpagCornerBadge({this.darkSurface = false, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 70,
-      color: kDarkPill,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 20,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Text(
-                'SPAG Service',
-                style: const TextStyle(
-                  color: kWhite,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: -15,
-            right: 20,
-            child: Container(
-              width: 60,
-              height: 60,
+    final bgColor = darkSurface
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.72);
+    final borderColor = darkSurface
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.10);
+    final logoBg = darkSurface
+        ? Colors.white.withValues(alpha: 0.12)
+        : const Color(0xFFFFFFFF);
+    final logoBorderColor = darkSurface
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.08);
+    final nameColor = darkSurface ? const Color(0xFFFFFFFF) : const Color(0xFF111110);
+    final subColor  = darkSurface
+        ? Colors.white.withValues(alpha: 0.45)
+        : const Color(0xFF8A8880);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: borderColor, width: 0.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: kWhite,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                color: logoBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: logoBorderColor, width: 0.5),
               ),
-              child: Center(
-                child: Image.asset(
-                  'assets/spag-logo.png',
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.contain,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Image.asset(
+                    'assets/spag-logo.png',
+                    width: 22,
+                    height: 22,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('SPAG Service',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: nameColor,
+                        height: 1.15)),
+                const SizedBox(height: 2),
+                Text('Official App',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w400,
+                        color: subColor,
+                        height: 1.15)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── ERROR STATE CARD ──────────────────────────────────────────────────────
+class ErrorStateCard extends StatelessWidget {
+  final String title;
+  final String message;
+  final VoidCallback onRetry;
+  final VoidCallback? onLogin;
+
+  const ErrorStateCard({
+    required this.title,
+    required this.message,
+    required this.onRetry,
+    this.onLogin,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        decoration: BoxDecoration(
+          color: kWhite,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.08),
+            width: 0.5,
           ),
-        ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            // ── Icon tile ──────────────────────────────────────────
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4ED),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFD85A30).withValues(alpha: 0.15),
+                  width: 0.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: Color(0xFFD85A30),
+                size: 26,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Title ─────────────────────────────────────────────
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: kInk,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            // ── Message ───────────────────────────────────────────
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: kInk2,
+                height: 1.6,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Divider ───────────────────────────────────────────
+            Container(
+              height: 0.5,
+              color: Colors.black.withValues(alpha: 0.07),
+              margin: const EdgeInsets.only(bottom: 16),
+            ),
+
+            // ── Login button (primary) ─────────────────────────────
+            if (onLogin != null) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: GestureDetector(
+                  onTap: onLogin,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: kDarkPill,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kWhite,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // ── Retry button (secondary) ───────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: GestureDetector(
+                onTap: onRetry,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      width: 0.5,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.refresh_rounded,
+                          size: 15, color: kInk),
+                      SizedBox(width: 6),
+                      Text(
+                        'Retry',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: kInk,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          ],
+        ),
       ),
     );
   }
 }
 
 // Add more shared widgets as needed.
-

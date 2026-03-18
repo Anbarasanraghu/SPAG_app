@@ -6,6 +6,7 @@ import 'features/customer/screens/customer_dashboard_screen.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/technician/screens/technician_home_screen.dart';
+import 'splash_screen.dart';
 
 class AuthCheckScreen extends StatelessWidget {
   const AuthCheckScreen({super.key});
@@ -99,8 +100,10 @@ class SpagApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const AuthCheckScreen(),
+      initialRoute: '/splash',
       routes: {
+        '/splash': (_) => const SplashScreen(),
+        '/home': (_) => const AuthCheckScreen(),
         '/login': (context) => const LoginScreen(),
         '/purifier-catalog': (context) => const CustomerCatalogScreen(),
         '/customer-dashboard': (context) => const CustomerDashboardScreen(),

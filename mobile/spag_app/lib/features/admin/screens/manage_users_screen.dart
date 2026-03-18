@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/ui/ui_kit.dart';
 import '../models/admin_user.dart';
 import '../services/admin_user_service.dart';
 
@@ -111,35 +112,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
             // ── ERROR ───────────────────────────────────────────────────
             if (snapshot.hasError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(22),
-                        decoration: BoxDecoration(
-                          color: _kBlush.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const Icon(Icons.error_outline,
-                            size: 40, color: _kInk2),
-                      ),
-                      const SizedBox(height: 14),
-                      const Text('Something went wrong',
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: _kInk)),
-                      const SizedBox(height: 4),
-                      Text(snapshot.error.toString(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              fontSize: 11, color: _kInk2)),
-                    ],
-                  ),
-                ),
+              return ErrorStateCard(
+                title: 'Failed to load requests',
+                message:
+                    'You need to be logged in to view your requests. Please log in and try again.',
+                onRetry: () => setState(() {
+                  usersFuture = AdminUserService.fetchUsers();
+                }),
+                onLogin: () => Navigator.of(context).pushNamed('/login'),
               );
             }
 

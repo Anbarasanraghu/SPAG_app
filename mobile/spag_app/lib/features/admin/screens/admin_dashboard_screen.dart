@@ -5,7 +5,6 @@ import '../../../core/api/admin_dashboard_service.dart';
 import '../../../core/models/admin_dashboard.dart';
 import '../../../core/services/installation_event_service.dart';
 import '../../../core/ui/ui_kit.dart';
-import '../../auth/screens/login_screen.dart';
 import '../../customer/screens/customer_main_screen.dart';
 import 'product_requests_screen.dart';
 import 'pending_services_screen.dart';
@@ -92,7 +91,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return PopScope(
       canPop: false, // intercepts the Android back button
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
         final shouldExit = await showDialog<bool>(
@@ -154,28 +153,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('Failed to load dashboard data',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
-                          Text(snapshot.error.toString(),
-                              style: const TextStyle(color: Colors.red)),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () => setState(() {
-                              _statsFuture =
-                                  AdminDashboardService.fetchDashboardStats();
-                            }),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
+                  return ErrorStateCard(
+                    title: 'Failed to load requests',
+                    message:
+                        'You need to be logged in to view your requests. Please log in and try again.',
+                    onRetry: () => setState(() {
+                      _statsFuture =
+                          AdminDashboardService.fetchDashboardStats();
+                    }),
+                    onLogin: () => Navigator.of(context).pushNamed('/login'),
                   );
                 } else {
                   return _BodyWidget(snapshot.data, _navIndex,

@@ -45,6 +45,16 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
     setState(() => role = r);
   }
 
+  Future<List<PurifierModel>> _fetchModels() {
+    return PurifierService.listModels().then((models) {
+      debugPrint("[CustomerCatalog] Loaded ${models.length} models");
+      return models;
+    }).catchError((e) {
+      debugPrint("[CustomerCatalog] Error loading models: $e");
+      throw e;
+    });
+  }
+
   // ── COLOUR CONSTANTS ─────────────────────────────────────
   static const Color _bg        = Color(0xFFF5F9FF);
   static const Color _panel     = Color(0xFFFFFFFF);
@@ -65,13 +75,7 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
       debugPrint("CUSTOMER CATALOG TOKEN => $token");
     });
 
-    _modelsFuture = PurifierService.listModels().then((models) {
-      debugPrint("[CustomerCatalog] Loaded ${models.length} models");
-      return models;
-    }).catchError((e) {
-      debugPrint("[CustomerCatalog] Error loading models: $e");
-      throw e;
-    });
+    _modelsFuture = _fetchModels();
 
     _loadRole();
   }
@@ -142,6 +146,10 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
             ),
           ),
         ],
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Center(child: SpagCornerBadge()),
+        ),
       ],
     );
   }
@@ -221,7 +229,6 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
     return Scaffold(
       appBar: _buildAppBar(),
       backgroundColor: _bg,
-      bottomNavigationBar: const SpagFooterLogo(),
       body: SafeArea(
         child: RefreshIndicator(
           color: _ink,
@@ -267,7 +274,12 @@ class _CustomerCatalogScreenState extends State<CustomerCatalogScreen> {
                       return _LoadingState();
                     }
                     if (snapshot.hasError) {
-                      return _ErrorState(error: '${snapshot.error}');
+                      return _ErrorState(
+                        error: snapshot.error.toString(),
+                        onRetry: () => setState(() {
+                          _modelsFuture = _fetchModels();
+                        }),
+                      );
                     }
                     final models = snapshot.data ?? [];
                     if (models.isEmpty) {
@@ -758,43 +770,20 @@ class _LoadingState extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _ErrorState extends StatelessWidget {
   final String error;
-  const _ErrorState({required this.error});
+  final VoidCallback onRetry;
+  const _ErrorState({required this.error, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: _blush.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(
-                color: _white.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Text('⚠️', style: TextStyle(fontSize: 26)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('Failed to load purifiers',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: _ink)),
-            const SizedBox(height: 8),
-            Text(error,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: _ink2)),
-          ],
-        ),
-      ),
+    // Keep the raw error available for debugging if needed.
+    debugPrint('Catalog error: $error');
+
+    return ErrorStateCard(
+      title: 'Failed to load requests',
+      message:
+          'You need to be logged in to view your requests. Please log in and try again.',
+      onRetry: onRetry,
+      onLogin: () => Navigator.of(context).pushNamed('/login'),
     );
   }
 }

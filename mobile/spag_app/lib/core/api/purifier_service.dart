@@ -83,7 +83,7 @@ class PurifierService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to fetch product requests');
+      throw Exception('Failed to fetch user requests: ${response.body}');
     }
 
     final List data = jsonDecode(response.body);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import '../../../core/ui/ui_kit.dart';
 import '../services/installation_service.dart';
 import '../models/installation_job.dart';
 
@@ -884,37 +885,14 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: _blush.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: const Text('❌', style: TextStyle(fontSize: 32)),
-            ),
-            const SizedBox(height: 18),
-            const Text('Something went wrong',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: _ink,
-                    letterSpacing: -0.4)),
-            const SizedBox(height: 10),
-            Text(error,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 13, color: _ink2, height: 1.5)),
-            const SizedBox(height: 24),
-            _PillButton(label: 'Retry', emoji: '🔄', onTap: onRetry),
-          ],
-        ),
-      ),
+    debugPrint('Installation jobs error: $error');
+
+    return ErrorStateCard(
+      title: 'Failed to load requests',
+      message:
+          'You need to be logged in to view your requests. Please log in and try again.',
+      onRetry: onRetry,
+      onLogin: () => Navigator.of(context).pushNamed('/login'),
     );
   }
 }

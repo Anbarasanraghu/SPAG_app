@@ -64,7 +64,7 @@ class ServiceHistoryService {
             debugPrint("[ServiceHistoryService] Parsing as object - looking for services array");
             final servicesList = jsonData['services'] ?? jsonData['data'] ?? jsonData['records'] ?? [];
             
-            debugPrint("[ServiceHistoryService] Found servicesList: ${servicesList.runtimeType}, length: ${servicesList is List ? (servicesList as List).length : 0}");
+            debugPrint("[ServiceHistoryService] Found servicesList: ${servicesList.runtimeType}, length: ${servicesList is List ? servicesList.length : 0}");
             
             if (servicesList is List) {
               services = servicesList

@@ -54,7 +54,6 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      bottomNavigationBar: const SpagFooterLogo(),
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
@@ -69,6 +68,12 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: kInk),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(child: SpagCornerBadge()),
+          ),
+        ],
       ),
       body: SafeArea(
         child: FutureBuilder<List<dynamic>>(
@@ -79,28 +84,13 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
             }
 
             if (snapshot.hasError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, color: kBlush, size: 48),
-                      const SizedBox(height: 16),
-                      const Text('Failed to load requests', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Text(snapshot.error.toString(), style: const TextStyle(color: kBlush)),
-                      const SizedBox(height: 20),
-                      PillButton(
-                        label: 'Retry',
-                        loading: false,
-                        onTap: () => setState(() {
-                          _requestsFuture = PurifierService.listUserRequests();
-                        }),
-                      ),
-                    ],
-                  ),
-                ),
+              return ErrorStateCard(
+                title: 'Failed to load requests',
+                message: 'You need to be logged in to view your requests. Please log in and try again.',
+                onRetry: _reload,
+                onLogin: () {
+                  Navigator.of(context).pushNamed('/login');
+                },
               );
             }
 

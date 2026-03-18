@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
+import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../../../core/api/dashboard_service.dart';
 import '../../../core/api/service_history_service.dart';
 import '../../../core/models/dashboard.dart';
@@ -8,86 +9,51 @@ import '../../../core/services/installation_event_service.dart';
 import '../../../core/ui/ui_kit.dart';
 import '../../auth/services/auth_service.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER DASHBOARD SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
 class CustomerDashboardScreen extends StatefulWidget {
   const CustomerDashboardScreen({super.key});
 
   @override
-  State<CustomerDashboardScreen> createState() => _CustomerDashboardScreenState();
+  State<CustomerDashboardScreen> createState() =>
+      _CustomerDashboardScreenState();
 }
 
-class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
+  late Future<CustomerDashboard> _dashFuture;
 
   @override
   void initState() {
     super.initState();
-    
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _fadeController.forward();
-    _slideController.forward();
-    
-    // 🔹 Listen to installation completion events
-    InstallationEventService.installationCompletedNotifier.addListener(_onInstallationCompleted);
+    _dashFuture = _loadDashboard();
+    InstallationEventService.installationCompletedNotifier
+        .addListener(_onInstallationCompleted);
   }
 
   @override
   void dispose() {
-    // 🔹 Clean up listener
-    InstallationEventService.installationCompletedNotifier.removeListener(_onInstallationCompleted);
-    _fadeController.dispose();
-    _slideController.dispose();
+    InstallationEventService.installationCompletedNotifier
+        .removeListener(_onInstallationCompleted);
     super.dispose();
   }
 
   void _onInstallationCompleted() {
-    debugPrint("[CustomerDashboard] Installation event received, refreshing dashboard");
-    // The FutureBuilder will automatically rebui on state change if we trigger a rebuild
-    setState(() {});
+    debugPrint(
+        '[CustomerDashboard] Installation event received, refreshing');
+    setState(() => _dashFuture = _loadDashboard());
   }
 
   Future<CustomerDashboard> _loadDashboard() async {
     final token = await AuthService.getToken();
-    debugPrint("CUSTOMER DASHBOARD TOKEN => $token");
-    
-    // Fetch dashboard info
+    debugPrint('CUSTOMER DASHBOARD TOKEN => $token');
+
     var dashboard = await DashboardService.fetchDashboard();
-    debugPrint("[CustomerDashboard] Dashboard loaded: customerId=${dashboard.customerId}, model=${dashboard.purifierModel}, installDate=${dashboard.installDate}, services=${dashboard.services.length}");
-    
-    // Try to fetch service history separately
+
     try {
-      debugPrint("[CustomerDashboard] Attempting to fetch service history from separate endpoint...");
-      final serviceHistory = await ServiceHistoryService.fetchServiceHistory();
-      debugPrint("[CustomerDashboard] Service history fetched: ${serviceHistory.length} records");
-      
-      // If we got service history from the separate endpoint, use it
+      final serviceHistory =
+          await ServiceHistoryService.fetchServiceHistory();
       if (serviceHistory.isNotEmpty) {
-        debugPrint("[CustomerDashboard] Using service history from separate endpoint");
         dashboard = CustomerDashboard(
           customerId: dashboard.customerId,
           purifierModel: dashboard.purifierModel,
@@ -97,554 +63,268 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
         );
       }
     } catch (e) {
-      debugPrint("[CustomerDashboard] Service history fetch failed: $e");
+      debugPrint('[CustomerDashboard] Service history fetch failed: $e');
     }
-    
-    // Calculate next service date if not provided
-    if ((dashboard.nextServiceDate == null || dashboard.nextServiceDate!.isEmpty) && 
+
+    if ((dashboard.nextServiceDate == null ||
+            dashboard.nextServiceDate!.isEmpty) &&
         dashboard.installDate.isNotEmpty) {
       try {
-        // Get purifier model info to find service interval
         final modelId = int.tryParse(dashboard.purifierModel) ?? 0;
         if (modelId > 0) {
           final model = await PurifierModelCache().getModel(modelId);
           if (model != null) {
-            // Parse install date and add service interval
             final installDate = DateTime.parse(dashboard.installDate);
-            final nextService = installDate.add(Duration(days: model.serviceIntervalDays));
-            final formattedDate = '${nextService.year}-${nextService.month.toString().padLeft(2, '0')}-${nextService.day.toString().padLeft(2, '0')}';
-            
-            debugPrint("[CustomerDashboard] Calculated next service: $installDate + ${model.serviceIntervalDays}d = $formattedDate");
-            
+            final nextService =
+                installDate.add(Duration(days: model.serviceIntervalDays));
+            final formatted =
+                '${nextService.year}-${nextService.month.toString().padLeft(2, '0')}-${nextService.day.toString().padLeft(2, '0')}';
             dashboard = CustomerDashboard(
               customerId: dashboard.customerId,
               purifierModel: dashboard.purifierModel,
               installDate: dashboard.installDate,
-              nextServiceDate: formattedDate,
+              nextServiceDate: formatted,
               services: dashboard.services,
             );
           }
         }
       } catch (e) {
-        debugPrint("[CustomerDashboard] Error calculating next service date: $e");
+        debugPrint(
+            '[CustomerDashboard] Error calculating next service: $e');
       }
     }
-    
-    debugPrint("[CustomerDashboard] Final nextServiceDate: ${dashboard.nextServiceDate}");
+
     return dashboard;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      bottomNavigationBar: const SpagFooterLogo(),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          'My Purifier',
-          style: TextStyle(
-            color: Color(0xFF1A1A1A),
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1A1A)),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: FutureBuilder<CustomerDashboard>(
-        future: _loadDashboard(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 1500),
-                    builder: (context, value, child) {
-                      return Transform.rotate(
-                        angle: value * 2 * math.pi,
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: const Icon(
-                            Icons.water_drop,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                      );
-                    },
-                    onEnd: () {
-                      setState(() {});
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Loading your dashboard...',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            debugPrint('CustomerDashboard FutureBuilder error: ${snapshot.error}');
-            final errorMsg = snapshot.error.toString();
-            if (errorMsg.contains('Installation pending')) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.hourglass_empty,
-                        color: Colors.orange.shade400,
-                        size: 48,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Installation Pending',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.orange,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Your installation is pending. Please wait for technician.',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (errorMsg.contains('Installation not found')) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.info_outline,
-                        color: Colors.blue.shade700,
-                        size: 48,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'No Installation Found',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'It looks like you don\'t have a registered installation yet. Please request an installation or contact support.',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.error_outline,
-                      color: Colors.red.shade400,
-                      size: 48,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load dashboard',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${snapshot.error}',
-                    style: const TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final data = snapshot.data!;
-
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Main Purifier Card
-                    _buildPurifierCard(data),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Quick Stats Row
-                    _buildQuickStats(data),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Service History Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Service History',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.filter_list, size: 18),
-                          label: const Text('Filter'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFF6366F1),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    data.services.isEmpty
-                        ? _buildEmptyState()
-                        : _buildServiceList(data.services),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPurifierCard(CustomerDashboard data) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 0.9 + (value * 0.1),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF6366F1),
-              Color(0xFF8B5CF6),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Animated background circles
-            Positioned(
-              top: -30,
-              right: -30,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(seconds: 3),
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: 0.8 + (value * 0.2),
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.water_drop,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Your Purifier',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            FutureBuilder<String>(
-                              future: _getModelName(data.purifierModel),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  );
-                                }
-                                
-                                return Text(
-                                  snapshot.data ?? data.purifierModel,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _buildInfoRow(
-                    Icons.calendar_today,
-                    'Installed',
-                    data.installDate,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInfoRow(
-                    Icons.event_available,
-                    'Next Service',
-                    data.nextServiceDate ?? 'No upcoming service',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<String> _getModelName(String modelIdStr) async {
     try {
       final modelId = int.tryParse(modelIdStr) ?? 0;
       if (modelId == 0) return modelIdStr;
-      
-      final name = await PurifierModelCache().getModelName(modelId);
-      debugPrint('[CustomerDashboard] Model $modelId resolved to: $name');
-      return name;
+      return await PurifierModelCache().getModelName(modelId);
     } catch (e) {
-      debugPrint('[CustomerDashboard] Error resolving model name: $e');
       return modelIdStr;
     }
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white70, size: 18),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 14,
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ));
+
+    return Scaffold(
+      backgroundColor: kBg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: kInk),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: SpagCornerBadge()),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async =>
+              setState(() => _dashFuture = _loadDashboard()),
+          child: FutureBuilder<CustomerDashboard>(
+            future: _dashFuture,
+            builder: (context, snapshot) {
+              // ── Loading ──────────────────────────────────────────
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(color: kInk),
+                );
+              }
+
+              // ── Error ────────────────────────────────────────────
+              if (snapshot.hasError) {
+                final err = snapshot.error.toString();
+
+                if (err.contains('Installation pending')) {
+                  return _InstallationPendingState();
+                }
+                if (err.contains('Installation not found')) {
+                  return _NoInstallationState();
+                }
+
+                return ErrorStateCard(
+                  title: 'Failed to load dashboard',
+                  message:
+                      'You need to be logged in to view your dashboard. Please log in and try again.',
+                  onRetry: () =>
+                      setState(() => _dashFuture = _loadDashboard()),
+                  onLogin: () =>
+                      Navigator.of(context).pushNamed('/login'),
+                );
+              }
+
+              // ── Success ──────────────────────────────────────────
+              final data = snapshot.data!;
+              return ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.zero,
+                children: [
+                  // 1. Hero card
+                  _HeroCard(data: data, getModelName: _getModelName),
+                  const SizedBox(height: 14),
+
+                  // 2. Stats bento row
+                  _StatsBentoRow(data: data),
+                  const SizedBox(height: 14),
+
+                  // 3. Mini info cards
+                  _MiniInfoRow(data: data),
+                  const SizedBox(height: 20),
+
+                  // 4. Service history
+                  const _SectionTitle('Service History'),
+                  const SizedBox(height: 12),
+                  _ServiceHistoryList(services: data.services),
+                  const SizedBox(height: 24),
+                ],
+              );
+            },
           ),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildQuickStats(CustomerDashboard data) {
-    final totalServices = data.services.length;
-    final completedServices = data.services.where((s) => s.status == 'COMPLETED').length;
-    
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Total Services',
-            totalServices.toString(),
-            Icons.build_circle_outlined,
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Completed',
-            completedServices.toString(),
-            Icons.check_circle_outline,
-            const Color(0xFF3B82F6),
-          ),
-        ),
-      ],
-    );
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. HERO CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroCard extends StatelessWidget {
+  final CustomerDashboard data;
+  final Future<String> Function(String) getModelName;
+  const _HeroCard({required this.data, required this.getModelName});
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
-      builder: (context, animValue, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - animValue)),
-          child: Opacity(
-            opacity: animValue,
-            child: child,
-          ),
-        );
-      },
+  @override
+  Widget build(BuildContext context) {
+    final total = data.services.length;
+    final completed =
+        data.services.where((s) => s.status == 'COMPLETED').length;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        height: 200,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: kDarkPill,
+          borderRadius: BorderRadius.circular(30),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A),
+            // decorative circles
+            Positioned(
+              top: -30,
+              right: -20,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kLavender.withValues(alpha: 0.18),
+                ),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B7280),
+            Positioned(
+              bottom: -20,
+              right: 60,
+              child: Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kMint.withValues(alpha: 0.15),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(26),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // status pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: kMint.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(100),
+                      border:
+                          Border.all(color: kMint.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                              color: kMint, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 6),
+                        // model name from API
+                        FutureBuilder<String>(
+                          future: getModelName(data.purifierModel),
+                          builder: (context, snap) {
+                            final name =
+                                snap.data ?? data.purifierModel;
+                            return Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: kMint,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  const Text(
+                    'My\nPurifier',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: kWhite,
+                      height: 1.1,
+                      letterSpacing: -1,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  Row(
+                    children: [
+                      HeroPill(
+                        label:
+                            'Next: ${data.nextServiceDate ?? 'TBD'}',
+                        color: kPeach,
+                      ),
+                      const SizedBox(width: 8),
+                      HeroPill(
+                        label: '$completed/$total Done',
+                        color: kLavender,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -652,153 +332,552 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
       ),
     );
   }
+}
 
-  Widget _buildServiceList(List<dynamic> services) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        final s = services[index];
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 400 + (index * 100)),
-          curve: Curves.easeOut,
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, 30 * (1 - value)),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: s.status == 'COMPLETED'
-                      ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                      : const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  s.status == 'COMPLETED' ? Icons.check_circle : Icons.pending,
-                  color: s.status == 'COMPLETED'
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFF59E0B),
-                  size: 24,
-                ),
-              ),
-              title: Text(
-                'Service ${s.serviceNumber}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  s.serviceDate,
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 14,
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. STATS BENTO ROW
+// ─────────────────────────────────────────────────────────────────────────────
+class _StatsBentoRow extends StatelessWidget {
+  final CustomerDashboard data;
+  const _StatsBentoRow({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = data.services.length;
+    final completed =
+        data.services.where((s) => s.status == 'COMPLETED').length;
+    final pending = total - completed;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // big left card — total
+          Expanded(
+            flex: 5,
+            child: BentoCard(
+              color: kLavender,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Total Services',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: kInk2)),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$total',
+                    style: const TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                      color: kInk,
+                      height: 1,
+                      letterSpacing: -2,
+                    ),
                   ),
-                ),
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: s.status == 'COMPLETED'
-                      ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                      : const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  s.status,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: s.status == 'COMPLETED'
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFF59E0B),
+                  const SizedBox(height: 10),
+                  _SmallBadge(
+                    label: '$completed completed',
+                    textColor: const Color(0xFF4A3C8C),
                   ),
-                ),
+                ],
               ),
             ),
           ),
-        );
-      },
+
+          const SizedBox(width: 12),
+
+          // right column — completed + pending
+          Expanded(
+            flex: 4,
+            child: Column(
+              children: [
+                BentoCard(
+                  color: kMint,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Completed',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: kInk2)),
+                      const SizedBox(height: 6),
+                      Text('$completed',
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w900,
+                            color: kInk,
+                            height: 1,
+                            letterSpacing: -2,
+                          )),
+                      const SizedBox(height: 8),
+                      _SmallBadge(
+                        label:
+                            total > 0 ? '${((completed / total) * 100).toInt()}%' : '0%',
+                        textColor: const Color(0xFF1A6B48),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                BentoCard(
+                  color: kBlush,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Pending',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: kInk2)),
+                      const SizedBox(height: 6),
+                      Text('$pending',
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w900,
+                            color: kInk,
+                            height: 1,
+                            letterSpacing: -2,
+                          )),
+                      const SizedBox(height: 8),
+                      _SmallBadge(
+                        label: pending > 0
+                            ? '$pending in progress'
+                            : 'All clear',
+                        textColor: const Color(0xFF8B3047),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. MINI INFO ROW
+// ─────────────────────────────────────────────────────────────────────────────
+class _MiniInfoRow extends StatelessWidget {
+  final CustomerDashboard data;
+  const _MiniInfoRow({required this.data});
+
+  String _formatDate(String raw) {
+    if (raw.isEmpty) return '—';
+    try {
+      final d = DateTime.parse(raw);
+      return '${d.year}-${d.month.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return raw.length > 7 ? raw.substring(0, 7) : raw;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = data.services.length;
+    final completed =
+        data.services.where((s) => s.status == 'COMPLETED').length;
+    final resolvedPct =
+        total > 0 ? ((completed / total) * 100).toInt() : 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: _MiniCard(
+              icon: '📅',
+              value: _formatDate(data.installDate),
+              label: 'Install Date',
+              color: kSage,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _MiniCard(
+              icon: '🔧',
+              value: data.nextServiceDate != null &&
+                      data.nextServiceDate!.length >= 7
+                  ? data.nextServiceDate!.substring(5, 10)
+                  : 'TBD',
+              label: 'Next Service',
+              color: kSky,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _MiniCard(
+              icon: '✅',
+              value: '$resolvedPct%',
+              label: 'Resolved',
+              color: kPeach,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniCard extends StatelessWidget {
+  final String icon;
+  final String value;
+  final String label;
+  final Color color;
+  const _MiniCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 18)),
+          const SizedBox(height: 8),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: kInk,
+                  height: 1)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: kInk2)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. SERVICE HISTORY LIST
+// ─────────────────────────────────────────────────────────────────────────────
+class _ServiceHistoryList extends StatelessWidget {
+  final List<dynamic> services;
+  const _ServiceHistoryList({required this.services});
+
+  @override
+  Widget build(BuildContext context) {
+    if (services.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: kWhite.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Column(
+            children: [
+              Text('📭',
+                  style: TextStyle(fontSize: 36)),
+              SizedBox(height: 12),
+              Text('No service history yet',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: kInk)),
+              SizedBox(height: 4),
+              Text('Your service records will appear here',
+                  style: TextStyle(fontSize: 12, color: kInk2),
+                  textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: services.map((s) {
+          final isDone = s.status == 'COMPLETED';
+          return _ServiceItem(
+            serviceNumber: s.serviceNumber.toString(),
+            date: s.serviceDate,
+            status: s.status,
+            isDone: isDone,
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _ServiceItem extends StatefulWidget {
+  final String serviceNumber;
+  final String date;
+  final String status;
+  final bool isDone;
+  const _ServiceItem({
+    required this.serviceNumber,
+    required this.date,
+    required this.status,
+    required this.isDone,
+  });
+
+  @override
+  State<_ServiceItem> createState() => _ServiceItemState();
+}
+
+class _ServiceItemState extends State<_ServiceItem> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final dotColor = widget.isDone ? kMint : kPeach;
+    final badgeTextColor = widget.isDone
+        ? const Color(0xFF0F6E56)
+        : const Color(0xFF854F0B);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        margin: const EdgeInsets.only(bottom: 10),
+        transform: Matrix4.identity()
+          ..scaleByVector3(
+              vm.Vector3.all(_pressed ? 0.98 : 1.0)),
+        transformAlignment: Alignment.center,
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: kWhite.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+              color: Colors.black.withValues(alpha: 0.05), width: 0.5),
+        ),
+        child: Row(
           children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 800),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: Opacity(
-                    opacity: value,
-                    child: child,
+            // icon tile
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: dotColor.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  widget.isDone ? '✓' : '⏳',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Service #${widget.serviceNumber}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: kInk,
+                    ),
                   ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.history,
-                  color: Color(0xFF6366F1),
-                  size: 48,
-                ),
+                  const SizedBox(height: 2),
+                  Text(widget.date,
+                      style: const TextStyle(
+                          fontSize: 10, color: kInk2)),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'No service history yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
+
+            // status badge
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: dotColor.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(100),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your service records will appear here',
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 14,
+              child: Text(
+                widget.status,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: badgeTextColor,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SPECIAL ERROR STATES
+// ─────────────────────────────────────────────────────────────────────────────
+class _InstallationPendingState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: Colors.black.withValues(alpha: 0.07),
+                width: 0.5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: kPeach.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Center(
+                  child: Text('⏳', style: TextStyle(fontSize: 26)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Installation Pending',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: kInk)),
+              const SizedBox(height: 6),
+              const Text(
+                'Your installation is pending.\nPlease wait for the technician.',
+                style: TextStyle(fontSize: 12, color: kInk2, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NoInstallationState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: Colors.black.withValues(alpha: 0.07),
+                width: 0.5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: kSky.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Center(
+                  child: Text('📭', style: TextStyle(fontSize: 26)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('No Installation Found',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: kInk)),
+              const SizedBox(height: 6),
+              const Text(
+                "You don't have a registered installation yet.\nPlease request one or contact support.",
+                style: TextStyle(fontSize: 12, color: kInk2, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED HELPERS (local to this file)
+// ─────────────────────────────────────────────────────────────────────────────
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: kInk,
+          letterSpacing: -0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _SmallBadge extends StatelessWidget {
+  final String label;
+  final Color textColor;
+  const _SmallBadge({required this.label, required this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: kWhite.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: textColor),
       ),
     );
   }

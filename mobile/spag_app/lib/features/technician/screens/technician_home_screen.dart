@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import '../models/technician_service.dart';
 import '../services/technician_api.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../../core/ui/ui_kit.dart';
 import '../../customer/screens/customer_main_screen.dart';
 import 'installation_jobs_screen.dart';
 
@@ -1280,40 +1281,14 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 360,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: _blush.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Text('❌', style: TextStyle(fontSize: 32)),
-              ),
-              const SizedBox(height: 16),
-              const Text('Could not load services',
-                  style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: _ink,
-                      letterSpacing: -0.4)),
-              const SizedBox(height: 8),
-              Text(error,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 12, color: _ink2, height: 1.5)),
-              const SizedBox(height: 24),
-              _RetryButton(onTap: onRetry),
-            ],
-          ),
-        ),
-      ),
+    debugPrint('Technician home error: $error');
+
+    return ErrorStateCard(
+      title: 'Failed to load requests',
+      message:
+          'You need to be logged in to view your requests. Please log in and try again.',
+      onRetry: onRetry,
+      onLogin: () => Navigator.of(context).pushNamed('/login'),
     );
   }
 }
