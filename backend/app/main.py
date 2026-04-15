@@ -131,6 +131,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ASGI middleware to handle double slashes in URLs
+class NormalizePathMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope["path"]
+            if "//" in path:
+                scope["path"] = path.replace("//", "/")
+        await self.app(scope, receive, send)
+
+app.add_middleware(NormalizePathMiddleware)
+
 @app.get("/")
 def root():
     return {"status": "SPAG Backend Running"}
@@ -139,5 +153,5 @@ if __name__ == "__main__":
     import uvicorn
     # print("Starting server on 127.0.0.1:8000")
     # uvicorn.run(app, host="127.0.0.1", port=8000)
-    print("Starting server on 192.168.1.7:3000")
-    uvicorn.run(app, host="192.168.1.3", port=3000)
+    print("Starting server on 192.168.1.16:3000")
+    uvicorn.run(app, host="192.168.1.16", port=3000)

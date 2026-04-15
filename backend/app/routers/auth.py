@@ -16,6 +16,12 @@ from app.models.user import User
 from app.models.customer import Customer
 from app.models.otp import OTPRequest
 from app.core.security import create_access_token, hash_password, verify_password
+from app.schemas.auth import SendOTPRequest, SendOTPResponse, VerifyOTPRequest, VerifyOTPResponse
+
+# Helper function for OTP generation
+def generate_otp() -> str:
+    """Generate a secure 6-digit OTP."""
+    return str(random.randint(100000, 999999))
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -124,17 +130,19 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/forgot-password")
-def forgot_password(
+async def forgot_password(
     data: ForgotPasswordRequest,
     db: Session = Depends(get_db)
 ):
+    import httpx
+
     phone = data.phone
 
     user = db.query(User).filter(User.phone == phone).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    otp = str(random.randint(100000, 999999))
+    otp = generate_otp()
     expires_at = datetime.utcnow() + timedelta(minutes=5)
 
     otp_entry = OTPRequest(
@@ -146,6 +154,25 @@ def forgot_password(
 
     db.add(otp_entry)
     db.commit()
+
+    # Send SMS via MSG91 Transactional SMS API
+    url = "https://control.msg91.com/api/v5/sms"
+    message = "THIS IS OTP FOR RESET PASSWORD {#numeric#}, AND THANKS FOR REACHING SPAG EAGLE GLOBAL PRIVATE LIMITED".replace("{#numeric#}", otp)
+    payload = {
+        "authkey": "493513A7e0g1DCcK69df481fP1",
+        "mobiles": phone,  # Remove 91 prefix - MSG91 adds it automatically for Indian numbers
+        "message": message,
+        "sender": "SPAGGL",
+        "country": "91",
+        "DLT_TE_ID": "1107177607188322509"
+    }
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, data=payload)
+            print(f"SMS response for {phone}: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Failed to send SMS: {e}")
+        # Continue anyway - OTP is stored in DB
 
     print(f"RESET OTP for {phone}: {otp}")
 
@@ -197,6 +224,89 @@ def reset_password(
     print("New hash:", user.password_hash)
 
     return {"message": "Password reset successfully"}
+
+
+@router.post("/send-otp", response_model=SendOTPResponse)
+async def send_otp_endpoint(request: SendOTPRequest, db: Session = Depends(get_db)):
+    import httpx
+
+    # Look up customer mobile number
+    try:
+        customer = db.query(Customer).filter(Customer.id == int(request.customer_id)).first()
+        if not customer:
+            return SendOTPResponse(success=False, message="Customer not found")
+        phone = customer.mobile_number
+    except Exception as e:
+        return SendOTPResponse(success=False, message="Invalid customer ID")
+
+    # Generate OTP
+    otp = generate_otp()
+    expires_at = datetime.utcnow() + timedelta(minutes=5)
+
+    # Store in database (same as forgot-password)
+    otp_entry = OTPRequest(
+        mobile_number=phone,
+        otp=otp,
+        purpose="customer_verification",
+        expires_at=expires_at
+    )
+
+    db.add(otp_entry)
+    db.commit()
+
+    # Send SMS via MSG91 Transactional SMS API
+    url = "https://control.msg91.com/api/v5/sms"
+    message = "THIS IS OTP FOR RESET PASSWORD {#numeric#}, AND THANKS FOR REACHING SPAG EAGLE GLOBAL PRIVATE LIMITED".replace("{#numeric#}", otp)
+    payload = {
+        "authkey": "493513A7e0g1DCcK69df481fP1",
+        "mobiles": phone,
+        "message": message,
+        "sender": "SPAGGL",
+        "country": "91",
+        "DLT_TE_ID": "1107177607188322509"
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, data=payload)
+            print(f"SMS response for customer {request.customer_id} ({phone}): {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Failed to send SMS: {e}")
+
+    print(f"CUSTOMER OTP for {phone}: {otp}")
+
+    return SendOTPResponse(success=True, message="OTP sent successfully")
+
+
+@router.post("/verify-otp", response_model=VerifyOTPResponse)
+def verify_otp_endpoint(request: VerifyOTPRequest, db: Session = Depends(get_db)):
+    # Look up customer mobile number
+    try:
+        customer = db.query(Customer).filter(Customer.id == int(request.customer_id)).first()
+        if not customer:
+            return VerifyOTPResponse(success=False, message="Customer not found")
+        phone = customer.mobile_number
+    except Exception as e:
+        return VerifyOTPResponse(success=False, message="Invalid customer ID")
+
+    # Verify OTP using database (same as verify-reset-otp)
+    otp_record = db.query(OTPRequest).filter(
+        OTPRequest.mobile_number == phone,
+        OTPRequest.otp == request.otp,
+        OTPRequest.purpose == "customer_verification",
+        OTPRequest.is_verified == False
+    ).order_by(OTPRequest.created_at.desc()).first()
+
+    if not otp_record:
+        return VerifyOTPResponse(success=False, message="Invalid OTP")
+
+    if otp_record.expires_at < datetime.utcnow():
+        return VerifyOTPResponse(success=False, message="OTP expired")
+
+    otp_record.is_verified = True
+    db.commit()
+
+    return VerifyOTPResponse(success=True, message="OTP verified successfully")
 
 
 @router.get("/me")
