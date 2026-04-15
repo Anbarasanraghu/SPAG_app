@@ -156,20 +156,27 @@ async def forgot_password(
     db.commit()
 
     # Send SMS via MSG91 Transactional SMS API
-    url = "https://control.msg91.com/api/v5/sms"
-    message = "THIS IS OTP FOR RESET PASSWORD {#numeric#}, AND THANKS FOR REACHING SPAG EAGLE GLOBAL PRIVATE LIMITED".replace("{#numeric#}", otp)
+    url = "https://control.msg91.com/api/v5/flow/"
+
     payload = {
+        "template_id": "1107177607188322509",  # Your DLT template ID
+        "short_url": "0",
+        "recipients": [
+            {
+                "mobiles": f"91{phone}",
+                "numeric": otp
+            }
+        ]
+    }
+
+    headers = {
         "authkey": "493513A7e0g1DCcK69df481fP1",
-        "mobiles": phone,  # Remove 91 prefix - MSG91 adds it automatically for Indian numbers
-        "message": message,
-        "sender": "SPAGGL",
-        "country": "91",
-        "DLT_TE_ID": "1107177607188322509"
+        "Content-Type": "application/json"
     }
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, data=payload)
-            print(f"SMS response for {phone}: {response.status_code} - {response.text}")
+            response = await client.post(url, json=payload, headers=headers)
+            print(f"MSG91 FLOW response: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Failed to send SMS: {e}")
         # Continue anyway - OTP is stored in DB
