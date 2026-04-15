@@ -262,21 +262,28 @@ async def send_otp_endpoint(request: SendOTPRequest, db: Session = Depends(get_d
     db.commit()
 
     # Send SMS via MSG91 Transactional SMS API
-    url = "https://control.msg91.com/api/v5/sms"
-    message = "THIS IS OTP FOR RESET PASSWORD {#numeric#}, AND THANKS FOR REACHING SPAG EAGLE GLOBAL PRIVATE LIMITED".replace("{#numeric#}", otp)
+    url = "https://control.msg91.com/api/v5/flow/"
+
     payload = {
+        "template_id": "1107177607188322509",
+        "short_url": "0",
+        "recipients": [
+            {
+                "mobiles": f"91{phone}",
+                "numeric": otp
+            }
+        ]
+    }
+
+    headers = {
         "authkey": "493513A7e0g1DCcK69df481fP1",
-        "mobiles": phone,
-        "message": message,
-        "sender": "SPAGGL",
-        "country": "91",
-        "DLT_TE_ID": "1107177607188322509"
+        "Content-Type": "application/json"
     }
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, data=payload)
-            print(f"SMS response for customer {request.customer_id} ({phone}): {response.status_code} - {response.text}")
+            response = await client.post(url, json=payload, headers=headers)
+            print(f"MSG91 FLOW response (customer): {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Failed to send SMS: {e}")
 
