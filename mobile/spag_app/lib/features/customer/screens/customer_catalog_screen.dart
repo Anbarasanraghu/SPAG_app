@@ -632,6 +632,80 @@ class _PurifierCardState extends State<_PurifierCard> {
               ],
             ),
 
+            const SizedBox(height: 12),
+
+            // ── Additional info row ──────────────────────────────────────
+            if (m.price != null || m.capacity != null)
+              Row(
+                children: [
+                  if (m.price != null)
+                    Expanded(
+                      child: _StatChip(
+                        emoji: '💰',
+                        label: 'Price',
+                        value: '₹${m.price!.toStringAsFixed(0)}',
+                        bgColor: _white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  if (m.price != null && m.capacity != null) const SizedBox(width: 10),
+                  if (m.capacity != null)
+                    Expanded(
+                      child: _StatChip(
+                        emoji: '🪣',
+                        label: 'Capacity',
+                        value: m.capacity!,
+                        bgColor: _white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                ],
+              ),
+
+            if (m.category != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _white.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    const Text('🏷️', style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Category: ${m.category}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (m.descriptions != null && m.descriptions!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _white.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  m.descriptions!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: _ink2,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
 
             // ── CTA Button ─────────────────────────────────────────────

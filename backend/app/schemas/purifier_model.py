@@ -5,6 +5,13 @@ class PurifierModelCreate(BaseModel):
     name: str
     service_interval_days: int
     free_services: int
+    colours: Optional[str] = None
+    price: Optional[float] = None
+    features: Optional[str] = None
+    image_url: Optional[str] = None
+    category: Optional[str] = None
+    capacity: Optional[str] = None
+    descriptions: Optional[str] = None
 
 class PurifierModelResponse(PurifierModelCreate):
     id: int
