@@ -1,104 +1,188 @@
 """
-SMS Service — Fast2SMS only.
-Provides a single async function: send_otp_sms(phone, otp)
+SMS Service — Fast2SMS with Indian DLT Compliance.
+Provides a single async function: send_otp_sms(phone: str, otp: str) -> bool
+
+DLT Compliance:
+- Uses Fast2SMS Message ID (integer) in the `message` field — NOT the template text
+- Uses registered sender_id (SPAGGL)
+- Follows route=dlt with variables_values parameter for OTP substitution
+- Per Fast2SMS API docs: `message` = Message_ID like "214154" (integer, not template string)
 """
 
 import logging
 import os
+import re
 
 import httpx
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-FAST2SMS_API_KEY = os.getenv("FAST2SMS_API_KEY")
-FAST2SMS_SENDER_ID = os.getenv("FAST2SMS_SENDER_ID", "FSTSMS")
 FAST2SMS_URL = "https://www.fast2sms.com/dev/bulkV2"
+FAST2SMS_TIMEOUT = 10.0  # seconds
 
-# DLT-approved message template for Fast2SMS.
-# Use {#var#} placeholder (NOT {otp}) for Fast2SMS DLT compliance.
-# The actual OTP will be passed via "variables_values" parameter.
-OTP_MESSAGE_TEMPLATE = "Your OTP is {#var#}. Valid for 5 minutes. Do not share it with anyone. - SPAG Eagle Global Pvt Ltd"
+
+def _validate_phone(phone: str) -> str:
+    """
+    Validate and normalize Indian phone number.
+
+    Args:
+        phone: Raw phone input (may include +91, leading zeros, spaces)
+
+    Returns:
+        Normalized 10-digit phone number
+
+    Raises:
+        ValueError: If phone format is invalid
+    """
+    if not phone:
+        raise ValueError("Phone number cannot be empty")
+
+    normalized = phone.strip()
+
+    if normalized.startswith("+91"):
+        normalized = normalized[3:]
+    elif normalized.startswith("91") and len(normalized) > 10:
+        normalized = normalized[2:]
+
+    normalized = normalized.lstrip("0")
+
+    if not re.match(r"^\d{10}$", normalized):
+        raise ValueError(
+            f"Invalid phone number: {phone}. Expected 10-digit Indian mobile number."
+        )
+
+    return normalized
 
 
 async def send_otp_sms(phone: str, otp: str) -> bool:
     """
-    Send an OTP SMS via Fast2SMS.
+    Send an OTP SMS via Fast2SMS with DLT compliance.
+
+    Per Fast2SMS API docs, the `message` field must be the Message ID integer
+    (e.g. 214154), NOT the template text string. The template text is already
+    stored on Fast2SMS servers against that Message ID.
 
     Args:
-        phone: 10-digit Indian mobile number (no country code).
-        otp:   6-digit OTP string.
+        phone: Indian mobile number (10 digits, with/without +91)
+        otp:   4-6 digit OTP string
 
     Returns:
-        True if the SMS was dispatched successfully, False otherwise.
-
-    Raises:
-        ValueError: If FAST2SMS_API_KEY is not configured.
+        True if SMS was dispatched successfully, False otherwise
     """
-    if not FAST2SMS_API_KEY:
-        logger.error("FAST2SMS_API_KEY is not set in environment variables.")
-        raise ValueError("SMS service is not configured. Set FAST2SMS_API_KEY.")
+    # Read env vars inside the function so load_dotenv() timing doesn't matter
+    api_key    = os.getenv("FAST2SMS_API_KEY")
+    sender_id  = os.getenv("FAST2SMS_SENDER_ID", "SPAGGL")
+    message_id = os.getenv("FAST2SMS_MESSAGE_ID", "214154")
 
-    # Sanitise phone — strip leading zeros / country code if accidentally passed
-    phone = phone.strip().lstrip("+").lstrip("91")
-    if len(phone) != 10 or not phone.isdigit():
-        logger.error("Invalid phone number format: %s", phone)
-        raise ValueError(f"Invalid phone number: {phone}. Expected 10 digits.")
+    # Validate configuration
+    if not api_key:
+        logger.error("FAST2SMS_API_KEY is not configured in environment variables")
+        raise ValueError("SMS service not configured: FAST2SMS_API_KEY is required")
 
-    headers = {
-        "authorization": FAST2SMS_API_KEY,
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
+    # Validate phone
+    try:
+        phone = _validate_phone(phone)
+    except ValueError as exc:
+        logger.error("Phone validation failed: %s", exc)
+        return False
 
-    # DLT-compliant payload for Fast2SMS
-    # DO NOT format message — pass OTP via variables_values parameter
+    # Validate OTP format (4-6 digits)
+    if not re.match(r"^\d{4,6}$", otp):
+        logger.error("Invalid OTP format: %s (expected 4-6 digits)", otp)
+        return False
+
+    # ------------------------------------------------------------------ #
+    # KEY FIX: Per Fast2SMS API docs, `message` field = Message ID integer
+    # Do NOT send the template text — send only the numeric Message ID.
+    # The template text is stored on Fast2SMS servers against this ID.
+    # ------------------------------------------------------------------ #
     payload = {
-        "sender_id": FAST2SMS_SENDER_ID,
-        "message": OTP_MESSAGE_TEMPLATE,
-        "language": "english",
+        "sender_id": sender_id,
+        "message": message_id,        # ← Message ID integer (e.g. 214154), NOT template text
+        "variables_values": otp,      # ← OTP substituted into {#VAR#} in the stored template
         "route": "dlt",
         "numbers": phone,
         "flash": "0",
-        "variables_values": otp,
     }
 
+    headers = {
+        "authorization": api_key,
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
+    debug_msg = (
+        f"\nSENDING SMS DEBUG:\n"
+        f"sender_id={sender_id}\n"
+        f"message (Message ID)={message_id}\n"
+        f"variables_values={otp}\n"
+        f"phone={phone}\n"
+    )
+    logger.info(debug_msg)
+    print(debug_msg)
+
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(FAST2SMS_URL, data=payload, headers=headers)
-            response.raise_for_status()
+        async with httpx.AsyncClient(timeout=FAST2SMS_TIMEOUT) as client:
+            response = await client.post(
+                FAST2SMS_URL,
+                data=payload,
+                headers=headers,
+            )
+
+            # Parse response WITHOUT raising on HTTP errors
+            # Fast2SMS may return HTTP 400/424 with JSON error details we need to check
             
-            # Handle empty response
             if not response.content:
-                logger.warning(
-                    "Fast2SMS returned empty response for phone: %s (Sender: %s)",
-                    phone, FAST2SMS_SENDER_ID
-                )
+                logger.warning("Fast2SMS returned empty response for phone: %s", phone)
                 return False
-            
+
             try:
                 resp_json = response.json()
-            except ValueError as e:
+            except ValueError as exc:
                 logger.error(
-                    "Fast2SMS returned invalid JSON for phone %s: %s (Response: %s)",
-                    phone, e, response.text[:200],
+                    "Fast2SMS returned invalid JSON for phone %s: %s. HTTP Status: %d. Response: %s",
+                    phone,
+                    exc,
+                    response.status_code,
+                    response.text[:300],
                 )
                 return False
 
             if resp_json.get("return") is True:
-                logger.info("OTP SMS sent successfully to %s", phone)
+                logger.info(
+                    "OTP SMS sent successfully to %s (message_id=%s, sender_id=%s)",
+                    phone,
+                    message_id,
+                    sender_id,
+                )
                 return True
             else:
+                error_msg  = resp_json.get("message", "Unknown error")
+                error_code = resp_json.get("status_code", "N/A")
+                
+                # Log all failures
                 logger.warning(
-                    "Fast2SMS request failed for phone %s: %s",
-                    phone, resp_json
+                    "Fast2SMS DLT request failed for phone %s. Error: %s (Code: %s). "
+                    "Response: %s. message_id=%s, sender_id=%s",
+                    phone,
+                    error_msg,
+                    error_code,
+                    resp_json,
+                    message_id,
+                    sender_id,
                 )
                 return False
 
-    except httpx.HTTPStatusError as exc:
-        logger.error(
-            "Fast2SMS HTTP %d error for phone %s: %s",
-            exc.response.status_code, phone, exc.response.text,
-        )
+    except httpx.TimeoutException as exc:
+        logger.error("Fast2SMS timeout (%.1fs) for phone %s: %s", FAST2SMS_TIMEOUT, phone, exc)
         return False
+
     except httpx.RequestError as exc:
-        logger.error("Fast2SMS network error for phone %s: %s", phone, str(exc))
+        logger.error("Fast2SMS network error for phone %s: %s", phone, exc)
+        return False
+
+    except Exception as exc:
+        logger.exception("Unexpected error sending OTP SMS to %s: %s", phone, exc)
         return False

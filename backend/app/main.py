@@ -8,6 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 load_dotenv()
 
+# Configure logging to see all INFO and DEBUG messages
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 app = FastAPI(title="SPAG Purifier Service App")
 
 
