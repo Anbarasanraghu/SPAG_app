@@ -5,6 +5,8 @@ from app.models import purifier_model, user, customer, installation, service_his
 from sqlalchemy import text
 from app.routers import purifier_model ,customer ,installation ,service_history ,dashboard ,auth,admin,customer_profile,technician
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(title="SPAG Purifier Service App")
 

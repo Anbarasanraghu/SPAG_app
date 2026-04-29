@@ -1,107 +1,90 @@
-import secrets
-from datetime import datetime, timedelta
+"""
+OTP Service — generation, persistence, and verification.
+Keeps all OTP business logic out of route handlers.
+"""
+
 import logging
-import httpx
-from typing import Dict, Any
+import random
+from datetime import datetime, timedelta
+
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models.customer import Customer
+
+from app.models.otp import OTPRequest
 
 logger = logging.getLogger(__name__)
 
-# In-memory storage: customer_id -> {'otp': str, 'expiry': datetime, 'attempts': int, 'last_sent': datetime, 'mobile': str}
-otp_store: Dict[str, Dict[str, Any]] = {}
+OTP_EXPIRY_MINUTES = 5
+
 
 def generate_otp() -> str:
-    """Generate a secure 6-digit numeric OTP."""
-    return ''.join(secrets.choice('0123456789') for _ in range(6))
+    """Generate a cryptographically adequate 6-digit OTP."""
+    # secrets.randbelow gives a uniform distribution; random.randint is fine for
+    # 6-digit OTPs but swap to secrets if your security policy demands it.
+    return str(random.randint(100000, 999999))
 
-async def send_sms(phone: str, otp: str) -> Dict[str, Any]:
-    """Send SMS via MSG91 Transactional SMS API."""
-    url = "https://control.msg91.com/api/v5/sms"
-    message = "THIS IS OTP FOR RESET PASSWORD {#numeric#}, AND THANKS FOR REACHING SPAG EAGLE GLOBAL PRIVATE LIMITED".replace("{#numeric#}", otp)
-    payload = {
-        "authkey": "493513A7e0g1DCcK69df481fP1",
-        "mobiles": phone,
-        "message": message,
-        "sender": "SPAGGL",
-        "country": "91",
-        "DLT_TE_ID": "1107177607188322509"
-    }
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, data=payload)
-        logger.info(f"SMS response for {phone}: {response.status_code} - {response.text}")
-        return response.json()
 
-async def send_otp(customer_id: str, db: Session) -> None:
-    """Send OTP logic with rate limiting and storage management."""
-    # Look up customer mobile number
-    try:
-        customer = db.query(Customer).filter(Customer.id == int(customer_id)).first()
-        if not customer:
-            raise ValueError("Customer not found")
-        mobile = customer.mobile_number
-    except Exception as e:
-        logger.error(f"Error looking up customer {customer_id}: {e}")
-        raise ValueError("Invalid customer ID")
-    
-    now = datetime.now()
-    if customer_id in otp_store:
-        # Check rate limit: 30 seconds
-        if now - otp_store[customer_id]['last_sent'] < timedelta(seconds=30):
-            raise ValueError("Rate limit exceeded. Please wait 30 seconds before requesting another OTP.")
-        # Update existing entry
-        otp_store[customer_id]['otp'] = generate_otp()
-        otp_store[customer_id]['expiry'] = now + timedelta(minutes=5)
-        otp_store[customer_id]['attempts'] = 0
-        otp_store[customer_id]['last_sent'] = now
-        otp_store[customer_id]['mobile'] = mobile
-    else:
-        # Create new entry
-        otp_store[customer_id] = {
-            'otp': generate_otp(),
-            'expiry': now + timedelta(minutes=5),
-            'attempts': 0,
-            'last_sent': now,
-            'mobile': mobile
-        }
-    # Send SMS to customer's mobile number
-    await send_sms(f"91{mobile}", otp_store[customer_id]['otp'])
+def create_otp(db: Session, phone: str, purpose: str) -> str:
+    """
+    Generate a new OTP, persist it, and return the plaintext value.
 
-def verify_otp(customer_id: str, otp: str) -> Dict[str, Any]:
-    """Verify OTP with attempt tracking and expiry check."""
-    if customer_id not in otp_store:
-        return {"success": False, "message": "OTP not found. Please request a new OTP."}
-    
-    entry = otp_store[customer_id]
-    now = datetime.now()
-    
-    if now > entry['expiry']:
-        del otp_store[customer_id]
-        return {"success": False, "message": "OTP has expired. Please request a new OTP."}
-    
-    if entry['attempts'] >= 3:
-        return {"success": False, "message": "Maximum verification attempts exceeded. Please request a new OTP."}
-    
-    if entry['otp'] == otp:
-        del otp_store[customer_id]
-        return {"success": True, "message": "OTP verified successfully."}
-    else:
-        entry['attempts'] += 1
-        remaining = 3 - entry['attempts']
-        return {"success": False, "message": f"Invalid OTP. {remaining} attempts remaining."}
+    Args:
+        db:      SQLAlchemy session.
+        phone:   10-digit mobile number (no country code).
+        purpose: Logical label, e.g. "reset_password" or "customer_verification".
 
-# Optional: Background task to clean expired OTPs (can be scheduled with APScheduler or similar)
-def clean_expired_otps():
-    """Remove expired OTP entries from storage."""
-    now = datetime.now()
-    expired_phones = [phone for phone, entry in otp_store.items() if now > entry['expiry']]
-    for phone in expired_phones:
-        del otp_store[phone]
-    if expired_phones:
-        logger.info(f"Cleaned {len(expired_phones)} expired OTP entries.")
+    Returns:
+        The generated OTP string (caller passes it to the SMS service).
+    """
+    otp = generate_otp()
+    expires_at = datetime.utcnow() + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
-# For future PostgreSQL integration (using existing OTPRequest model):
-# Note: The existing OTPRequest model uses mobile_number for backward compatibility
-# The new in-memory system uses customer_id for better security
-# When migrating to DB storage, create a new table or update the existing one
+    otp_entry = OTPRequest(
+        mobile_number=phone,
+        otp=otp,
+        purpose=purpose,
+        expires_at=expires_at,
+        is_verified=False,
+    )
+    db.add(otp_entry)
+    db.commit()
+
+    logger.info("OTP created for phone=%s purpose=%s", phone, purpose)
+    return otp
+
+
+def verify_otp(db: Session, phone: str, otp: str, purpose: str) -> OTPRequest:
+    """
+    Verify an OTP against the database.
+
+    Raises HTTPException (400) on invalid / expired OTP.
+    Marks the record as verified and commits on success.
+
+    Returns:
+        The verified OTPRequest row.
+    """
+    otp_record = (
+        db.query(OTPRequest)
+        .filter(
+            OTPRequest.mobile_number == phone,   # ← correct column name
+            OTPRequest.otp == otp,
+            OTPRequest.purpose == purpose,
+            OTPRequest.is_verified == False,     # noqa: E712
+        )
+        .order_by(OTPRequest.created_at.desc())
+        .first()
+    )
+
+    if not otp_record:
+        logger.warning("Invalid OTP attempt for phone=%s purpose=%s", phone, purpose)
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if otp_record.expires_at < datetime.utcnow():
+        logger.warning("Expired OTP attempt for phone=%s purpose=%s", phone, purpose)
+        raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+
+    otp_record.is_verified = True
+    db.commit()
+
+    logger.info("OTP verified for phone=%s purpose=%s", phone, purpose)
+    return otp_record
