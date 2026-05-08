@@ -68,6 +68,7 @@ flutter:
   # Assets used by the app
   assets:
     - assets/spag-logo.png
+    - assets/automatic.jpeg
 
   # To add additional assets to your application, add them here:
   # assets:

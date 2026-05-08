@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/ui/ui_kit.dart';
@@ -62,8 +60,8 @@ class _ProductSelectionScreenState extends State<ProductSelectionScreen> {
                 delegate: SliverChildListDelegate(
                   [
                     _ProductCard(
-                      title: 'Water Level Indicator',
-                      subtitle: 'Monitor water level automatically',
+                      title: 'Fully Automatic Water Level Controller',
+                      subtitle: 'Automatic water level controller with tank. Heavy duty power, multi-tank compatible.',
                       icon: Icons.water_drop,
                       accent: _sky,
                       onTap: () {
@@ -276,47 +274,6 @@ class WaterLevelIndicatorScreen extends StatefulWidget {
 }
 
 class _WaterLevelIndicatorScreenState extends State<WaterLevelIndicatorScreen> {
-  double _level = 0.65;
-  bool _auto = true;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (!_auto) return;
-      setState(() {
-        _level = (0.4 + (0.6 * (DateTime.now().second / 60))).clamp(0.0, 1.0);
-      });
-    });
-  }
-
-  void _toggleAuto() {
-    setState(() {
-      _auto = !_auto;
-      if (_auto) {
-        _startAutoRefresh();
-      } else {
-        _timer?.cancel();
-      }
-    });
-  }
-
-  void _refreshOnce() {
-    setState(() => _level = (0.3 + (0.7 * (DateTime.now().millisecond / 1000))).clamp(0.0, 1.0));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -324,7 +281,7 @@ class _WaterLevelIndicatorScreenState extends State<WaterLevelIndicatorScreen> {
         backgroundColor: _bgColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: _ink),
-        title: const Text('Water Level Indicator', style: TextStyle(color: _ink)),
+        title: const Text('Fully Automatic Water Level Controller', style: TextStyle(color: _ink)),
       ),
       backgroundColor: _bgColor,
       body: SafeArea(
@@ -350,77 +307,29 @@ class _WaterLevelIndicatorScreenState extends State<WaterLevelIndicatorScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Current water level',
+                      'Fully Automatic Water Level Controller',
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _ink2),
                     ),
                     const SizedBox(height: 16),
-                    Stack(
-                      children: [
-                        Container(
-                          height: 220,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: _ink2.withValues(alpha: 0.3), width: 2),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              heightFactor: _level,
-                              child: Container(
-                                color: _sky,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: Center(
-                            child: Text(
-                              '${(_level * 100).round()}%',
-                              style: const TextStyle(
-                                fontSize: 46,
-                                fontWeight: FontWeight.w900,
-                                color: _ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/automatic.jpeg',
+                        fit: BoxFit.cover,
+                        height: 300,
+                      ),
                     ),
                     const SizedBox(height: 18),
-                    Text(
-                      _auto
-                          ? 'Auto-refresh is on (updates every few seconds)'
-                          : 'Auto-refresh is off. Tap the button to update.',
-                      style: const TextStyle(fontSize: 13, color: _ink2),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _toggleAuto,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _auto ? _darkPill : _mint,
-                            ),
-                            child: Text(_auto ? 'Stop Auto' : 'Start Auto'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _refreshOnce,
-                            child: const Text('Refresh Now'),
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Automatic water level controller with tank. Heavy duty power, multi-tank compatible.',
+                      style: TextStyle(fontSize: 13, color: _ink2),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               const Text(
-                'Pro Tip: Connect the indicator to your home sensor hardware to get real-time readings. This screen simulates the behavior for demo purposes.',
+                'This automatic water level controller ensures optimal tank management with heavy-duty power handling and support for multiple tank configurations.',
                 style: TextStyle(fontSize: 12, color: _ink2),
               ),
             ],

@@ -290,6 +290,22 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             label: 'Customer ID',
             value: '#${c.customerId}',
           ),
+          const SizedBox(height: 12),
+          // Technician bento - only show if technician is assigned
+          if (c.technicianName != null && c.technicianName!.isNotEmpty)
+            _BentoInfoCard(
+              color: _kPeach,
+              icon: '👨‍🔧',
+              label: 'Assigned Technician',
+              value: c.technicianName!,
+            )
+          else
+            _BentoInfoCard(
+              color: _kBlush,
+              icon: '❌',
+              label: 'Assigned Technician',
+              value: 'Not Assigned',
+            ),
         ],
       ),
     );

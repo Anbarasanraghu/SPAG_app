@@ -8,10 +8,12 @@ from app.models.purifier_model import PurifierModel
 from app.models.customer import Customer
 from app.models.service_status_log import ServiceStatusLog
 from app.models.technician_activity_log import TechnicianActivityLog
-from app.core.security import require_admin , require_technician 
+from app.core.security import require_admin , require_technician, hash_password
 from app.database import SessionLocal, get_db
 from app.models.user import User
 from app.models.service_history import ServiceHistory
+from app.schemas.customer import AdminCreateCustomerRequest, AdminCreateCustomerResponse
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserDetailResponse
 
 router = APIRouter(tags=["Admin"])
 
@@ -21,6 +23,202 @@ def get_all_users(
     admin=Depends(require_admin)
 ):
     return db.query(User).all()
+
+
+@router.post("/admin/users", response_model=UserDetailResponse)
+def create_user(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Create a new user"""
+    # Check if phone already exists
+    existing_user = db.query(User).filter(User.phone == data.phone).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Phone number is already registered")
+    
+    try:
+        user = User(
+            name=data.name,
+            phone=data.phone,
+            email=data.email,
+            password_hash=hash_password(data.password),
+            role=data.role,
+            profile_completed=False,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        return UserDetailResponse(
+            id=user.id,
+            name=user.name,
+            phone=user.phone,
+            email=user.email,
+            role=user.role,
+            profile_completed=user.profile_completed,
+            message=f"User created successfully with ID {user.id}"
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
+
+
+@router.get("/admin/users/{user_id}", response_model=UserDetailResponse)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Get a specific user by ID"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return UserDetailResponse(
+        id=user.id,
+        name=user.name,
+        phone=user.phone,
+        email=user.email,
+        role=user.role,
+        profile_completed=user.profile_completed,
+    )
+
+
+@router.put("/admin/users/{user_id}", response_model=UserDetailResponse)
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Update user details"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    try:
+        # Update fields if provided
+        if data.name is not None:
+            user.name = data.name
+        if data.email is not None:
+            user.email = data.email
+        if data.role is not None:
+            user.role = data.role
+        if data.phone is not None:
+            # Check if new phone is already taken by another user
+            existing = db.query(User).filter(
+                User.phone == data.phone,
+                User.id != user_id
+            ).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Phone number is already registered")
+            user.phone = data.phone
+        
+        db.commit()
+        db.refresh(user)
+        
+        return UserDetailResponse(
+            id=user.id,
+            name=user.name,
+            phone=user.phone,
+            email=user.email,
+            role=user.role,
+            profile_completed=user.profile_completed,
+            message=f"User {user_id} updated successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating user: {str(e)}")
+
+
+@router.delete("/admin/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Delete a user"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    try:
+        # Check if user is linked to customer profile
+        customer = db.query(Customer).filter(Customer.user_id == user_id).first()
+        if customer:
+            # Delete customer profile first
+            db.delete(customer)
+        
+        # Delete user
+        db.delete(user)
+        db.commit()
+        
+        return {
+            "message": f"User {user_id} and associated data deleted successfully",
+            "deleted_user_id": user_id
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+
+
+@router.post("/admin/users/create-customer", response_model=AdminCreateCustomerResponse)
+def create_customer_by_admin(
+    data: AdminCreateCustomerRequest,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    """Admin endpoint to create a new customer with full profile details"""
+    # Check if phone already exists
+    existing_user = db.query(User).filter(User.phone == data.phone).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Phone number is already registered")
+    
+    try:
+        # 1. Create User
+        user = User(
+            name=data.name,
+            phone=data.phone,
+            email=data.email,
+            password_hash=hash_password(data.password),
+            role="customer",
+            profile_completed=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        # 2. Create Customer Profile
+        customer = Customer(
+            user_id=user.id,
+            full_name=data.full_name,
+            mobile_number=data.mobile_number,
+            email=data.email,
+            address_line1=data.address_line1,
+            address_line2=data.address_line2,
+            city=data.city,
+            state=data.state,
+            pincode=data.pincode,
+            landmark=data.landmark,
+        )
+        db.add(customer)
+        db.commit()
+        db.refresh(customer)
+        
+        return AdminCreateCustomerResponse(
+            user_id=user.id,
+            customer_id=customer.id,
+            name=user.name,
+            phone=user.phone,
+            email=user.email,
+            message=f"Customer {user.name} created successfully with ID {customer.id}"
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating customer: {str(e)}")
 
 
 @router.put("/admin/users/{user_id}/role")
@@ -251,18 +449,76 @@ def get_technician_activity_logs(
     db: Session = Depends(get_db),
     admin=Depends(require_admin)
 ):
-    """Get all activities for a technician"""
-    logs = db.query(TechnicianActivityLog).filter(
-        TechnicianActivityLog.technician_id == technician_id
-    ).order_by(TechnicianActivityLog.id.desc()).all()
+    """Get all activities for a specific technician"""
+    TechnicianUser = aliased(User)
+    CustomerUser = aliased(User)
     
-    return [{
-        "id": log.id,
-        "technician_id": log.technician_id,
-        "service_id": log.service_id,
-        "action": log.action,
-        "created_at": log.created_at,
-    } for log in logs]
+    logs = (
+        db.query(
+            TechnicianActivityLog, 
+            TechnicianUser, 
+            ServiceHistory, 
+            Customer, 
+            CustomerUser,
+            Installation,
+            PurifierModel
+        )
+        .join(TechnicianUser, TechnicianActivityLog.technician_id == TechnicianUser.id)
+        .join(ServiceHistory, TechnicianActivityLog.service_id == ServiceHistory.id, isouter=True)
+        .join(Customer, ServiceHistory.customer_id == Customer.id, isouter=True)
+        .join(CustomerUser, Customer.user_id == CustomerUser.id, isouter=True)
+        .join(Installation, ServiceHistory.installation_id == Installation.id, isouter=True)
+        .join(PurifierModel, Installation.purifier_model_id == PurifierModel.id, isouter=True)
+        .filter(TechnicianActivityLog.technician_id == technician_id)
+        .order_by(TechnicianActivityLog.id.desc())
+        .all()
+    )
+    
+    response = []
+    for log, technician, service, customer, customer_user, installation, purifier_model in logs:
+        response.append({
+            "id": log.id,
+            "action": log.action,
+            "created_at": str(log.created_at) if log.created_at else None,
+            # Technician details
+            "technician": {
+                "id": technician.id,
+                "name": technician.name,
+                "phone": technician.phone,
+                "role": technician.role,
+            },
+            # Service details
+            "service": {
+                "id": service.id if service else None,
+                "service_number": service.service_number if service else None,
+                "service_date": str(service.service_date) if service and service.service_date else None,
+                "status": service.status if service else None,
+            } if service else None,
+            # Customer details
+            "customer": {
+                "id": customer.id if customer else None,
+                "name": customer_user.name if customer_user else None,
+                "phone": customer_user.phone if customer_user else None,
+                "address_line1": customer.address_line1 if customer else None,
+                "address_line2": customer.address_line2 if customer else None,
+                "city": customer.city if customer else None,
+                "state": customer.state if customer else None,
+                "pincode": customer.pincode if customer else None,
+            } if customer else None,
+            # Purifier model details
+            "purifier_model": {
+                "id": purifier_model.id if purifier_model else None,
+                "name": purifier_model.name if purifier_model else None,
+                "capacity": purifier_model.capacity if purifier_model else None,
+                "category": purifier_model.category if purifier_model else None,
+                "price": purifier_model.price if purifier_model else None,
+                "features": purifier_model.features if purifier_model else None,
+                "service_interval_days": purifier_model.service_interval_days if purifier_model else None,
+                "free_services": purifier_model.free_services if purifier_model else None,
+            } if purifier_model else None,
+        })
+    
+    return response
 
 
 @router.get("/admin/technicians/activity-logs")
@@ -270,65 +526,151 @@ def get_all_technician_activity_logs(
     db: Session = Depends(get_db),
     admin=Depends(require_admin)
 ):
-    """Get all technician activity logs"""
-    logs = db.query(TechnicianActivityLog).order_by(TechnicianActivityLog.id.desc()).all()
-    return [{
-        "id": log.id,
-        "technician_id": log.technician_id,
-        "service_id": log.service_id,
-        "action": log.action,
-        "created_at": log.created_at,
-    } for log in logs]
+    """Get all technician activity logs with full details"""
+    TechnicianUser = aliased(User)
+    CustomerUser = aliased(User)
+    
+    logs = (
+        db.query(
+            TechnicianActivityLog, 
+            TechnicianUser, 
+            ServiceHistory, 
+            Customer, 
+            CustomerUser,
+            Installation,
+            PurifierModel
+        )
+        .join(TechnicianUser, TechnicianActivityLog.technician_id == TechnicianUser.id)
+        .join(ServiceHistory, TechnicianActivityLog.service_id == ServiceHistory.id, isouter=True)
+        .join(Customer, ServiceHistory.customer_id == Customer.id, isouter=True)
+        .join(CustomerUser, Customer.user_id == CustomerUser.id, isouter=True)
+        .join(Installation, ServiceHistory.installation_id == Installation.id, isouter=True)
+        .join(PurifierModel, Installation.purifier_model_id == PurifierModel.id, isouter=True)
+        .order_by(TechnicianActivityLog.id.desc())
+        .all()
+    )
+    
+    response = []
+    for log, technician, service, customer, customer_user, installation, purifier_model in logs:
+        response.append({
+            "id": log.id,
+            "action": log.action,
+            "created_at": str(log.created_at) if log.created_at else None,
+            # Technician details
+            "technician": {
+                "id": technician.id,
+                "name": technician.name,
+                "phone": technician.phone,
+                "role": technician.role,
+            },
+            # Service details
+            "service": {
+                "id": service.id if service else None,
+                "service_number": service.service_number if service else None,
+                "service_date": str(service.service_date) if service and service.service_date else None,
+                "status": service.status if service else None,
+            } if service else None,
+            # Customer details
+            "customer": {
+                "id": customer.id if customer else None,
+                "name": customer_user.name if customer_user else None,
+                "phone": customer_user.phone if customer_user else None,
+                "address_line1": customer.address_line1 if customer else None,
+                "address_line2": customer.address_line2 if customer else None,
+                "city": customer.city if customer else None,
+                "state": customer.state if customer else None,
+                "pincode": customer.pincode if customer else None,
+            } if customer else None,
+            # Purifier model details
+            "purifier_model": {
+                "id": purifier_model.id if purifier_model else None,
+                "name": purifier_model.name if purifier_model else None,
+                "capacity": purifier_model.capacity if purifier_model else None,
+                "category": purifier_model.category if purifier_model else None,
+                "price": purifier_model.price if purifier_model else None,
+                "features": purifier_model.features if purifier_model else None,
+                "service_interval_days": purifier_model.service_interval_days if purifier_model else None,
+                "free_services": purifier_model.free_services if purifier_model else None,
+            } if purifier_model else None,
+        })
+    
+    return response
 
 @router.get("/admin/product-requests")
 def get_requests(db: Session = Depends(get_db)):
-    """Return all product requests. If the DB is missing the `user_id` column,
-    attempt a best-effort ALTER TABLE to add it and retry once.
-    """
+    """Return all product requests with full customer information"""
     try:
-        return db.query(ProductRequest).all()
+        # Use aliased to distinguish between Customer user and Requester user
+        RequesterUser = aliased(User)
+        CustomerUser = aliased(User)
+        
+        # Join ProductRequest with Customer and User tables to get customer details
+        results = (
+            db.query(ProductRequest, Customer, RequesterUser, CustomerUser)
+            .join(Customer, ProductRequest.customer_id == Customer.id, isouter=True)
+            .join(CustomerUser, Customer.user_id == CustomerUser.id, isouter=True)
+            .join(RequesterUser, ProductRequest.user_id == RequesterUser.id, isouter=True)
+            .all()
+        )
+        
+        response = []
+        for product_req, customer, requester_user, customer_user in results:
+            # If customer exists, use customer details; otherwise use requester details
+            if customer and customer_user:
+                customer_info = {
+                    "id": customer.id,
+                    "name": customer_user.name,
+                    "phone": customer_user.phone,
+                    "address_line1": customer.address_line1,
+                    "address_line2": customer.address_line2,
+                    "city": customer.city,
+                    "state": customer.state,
+                    "pincode": customer.pincode,
+                }
+            elif requester_user:
+                customer_info = {
+                    "id": None,
+                    "name": requester_user.name,
+                    "phone": requester_user.phone,
+                    "address_line1": None,
+                    "address_line2": None,
+                    "city": None,
+                    "state": None,
+                    "pincode": None,
+                }
+            else:
+                customer_info = None
+                
+            response.append({
+                "id": product_req.id,
+                "customer_id": product_req.customer_id,
+                "user_id": product_req.user_id,
+                "purifier_model_id": product_req.purifier_model_id,
+                "status": product_req.status,
+                "assigned_technician_id": product_req.assigned_technician_id,
+                "created_at": str(product_req.created_at) if product_req.created_at else None,
+                "customer": customer_info,
+            })
+        
+        return response
     except Exception as e:
-        msg = str(e)
-        if 'product_requests.user_id' in msg or 'UndefinedColumn' in msg or 'column product_requests.user_id' in msg:
-            # Try to add the column (best-effort). Use raw SQL since SQLAlchemy models expect the column.
-            try:
-                db.execute(text("ALTER TABLE product_requests ADD COLUMN user_id INTEGER;"))
-                db.commit()
-                # Retry ORM query once
-                return db.query(ProductRequest).all()
-            except Exception:
-                # If we cannot alter (permissions or other), fall back to a raw select of available columns
-                try:
-                    # Attempt to list columns (Postgres information_schema)
-                    cols = []
-                    try:
-                        res = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='product_requests'"))
-                        cols = [r[0] for r in res.fetchall()]
-                    except Exception:
-                        # fallback to sqlite PRAGMA
-                        try:
-                            res = db.execute(text("PRAGMA table_info('product_requests')"))
-                            cols = [r[1] for r in res.fetchall()]
-                        except Exception:
-                            cols = []
+        print(f"DEBUG: Error fetching product requests: {str(e)}")
+        # Fallback: return minimal data if query fails
+        try:
+            requests = db.query(ProductRequest).all()
+            return [{
+                "id": r.id,
+                "customer_id": r.customer_id,
+                "user_id": r.user_id,
+                "purifier_model_id": r.purifier_model_id,
+                "status": r.status,
+                "assigned_technician_id": r.assigned_technician_id,
+                "created_at": str(r.created_at) if r.created_at else None,
+                "customer": None,
+            } for r in requests]
+        except Exception as fallback_error:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch product requests: {str(fallback_error)}")
 
-                    # Choose a safe subset of columns to return
-                    safe_cols = [c for c in ['id','purifier_model_id','status','assigned_technician_id','created_at','customer_id'] if c in cols]
-                    if not safe_cols:
-                        # If we couldn't determine columns, return an empty list with message
-                        return []
-
-                    sel = ", ".join(safe_cols)
-                    rows = db.execute(text(f"SELECT {sel} FROM product_requests")).fetchall()
-                    results = []
-                    for row in rows:
-                        # row may be a tuple; map to keys
-                        results.append({safe_cols[i]: row[i] for i in range(len(safe_cols))})
-                    return results
-                except Exception:
-                    raise HTTPException(status_code=500, detail="Database missing column product_requests.user_id and automatic migration failed")
-        # Not the specific issue we expect — re-raise as 500
-        raise
 
 @router.put("/admin/product-requests/{id}/assign")
 def assign_tech(id: int, technician_id: int, db: Session = Depends(get_db)):

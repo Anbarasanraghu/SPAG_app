@@ -84,6 +84,375 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
 
+  void _showCreateUserDialog(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    String selectedRole = 'customer';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _kWhite,
+        title: const Text('Create New User',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _kInk)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Phone',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.phone),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.email),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passwordCtrl,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.lock),
+                ),
+              ),
+              const SizedBox(height: 12),
+              StatefulBuilder(
+                builder: (ctx2, setState2) => DropdownButtonFormField<String>(
+                  value: selectedRole,
+                  decoration: InputDecoration(
+                    labelText: 'Role',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.security),
+                  ),
+                  items: _validRoles
+                      .map((role) => DropdownMenuItem(
+                            value: role,
+                            child: Text(role[0].toUpperCase() +
+                                role.substring(1)),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState2(() => selectedRole = val);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: _kInk2)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _kMint),
+            onPressed: () async {
+              if (nameCtrl.text.isEmpty ||
+                  phoneCtrl.text.isEmpty ||
+                  emailCtrl.text.isEmpty ||
+                  passwordCtrl.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All fields are required'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                await AdminUserService.createUser(
+                  name: nameCtrl.text,
+                  phone: phoneCtrl.text,
+                  email: emailCtrl.text,
+                  password: passwordCtrl.text,
+                  role: selectedRole,
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    usersFuture = AdminUserService.fetchUsers();
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('User created successfully'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            child: const Text('Create',
+                style: TextStyle(color: _kWhite, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditUserDialog(BuildContext context, AdminUser user) {
+    final nameCtrl = TextEditingController(text: user.name);
+    final phoneCtrl = TextEditingController(text: user.phone);
+    final emailCtrl = TextEditingController(text: user.email);
+    String selectedRole = user.role.toLowerCase();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _kWhite,
+        title: const Text('Edit User',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _kInk)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Phone',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.phone),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.email),
+                ),
+              ),
+              const SizedBox(height: 12),
+              StatefulBuilder(
+                builder: (ctx2, setState2) => DropdownButtonFormField<String>(
+                  value: selectedRole,
+                  decoration: InputDecoration(
+                    labelText: 'Role',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.security),
+                  ),
+                  items: _validRoles
+                      .map((role) => DropdownMenuItem(
+                            value: role,
+                            child: Text(role[0].toUpperCase() +
+                                role.substring(1)),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState2(() => selectedRole = val);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: _kInk2)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _kSky),
+            onPressed: () async {
+              if (nameCtrl.text.isEmpty ||
+                  phoneCtrl.text.isEmpty ||
+                  emailCtrl.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All fields are required'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                await AdminUserService.updateUser(
+                  userId: user.id,
+                  name: nameCtrl.text,
+                  phone: phoneCtrl.text,
+                  email: emailCtrl.text,
+                  role: selectedRole,
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    usersFuture = AdminUserService.fetchUsers();
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('User updated successfully'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            child: const Text('Update',
+                style: TextStyle(color: _kWhite, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context, AdminUser user) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _kWhite,
+        title: const Text('Delete User',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _kInk)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.warning_rounded,
+                  size: 40, color: Color(0xFFEF4444)),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Delete ${user.name}?',
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _kInk),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This action cannot be undone. All associated data will be deleted.',
+              style: TextStyle(fontSize: 12, color: _kInk2),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: _kInk2)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+            onPressed: () async {
+              try {
+                await AdminUserService.deleteUser(user.id);
+
+                if (context.mounted) {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    usersFuture = AdminUserService.fetchUsers();
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('User deleted successfully'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: _kWhite, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,6 +466,40 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           icon: const Icon(Icons.arrow_back, color: _kInk),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showCreateUserDialog(context),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _kMint.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _kMint.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.add, color: _kMint, size: 18),
+                        SizedBox(width: 6),
+                        Text('Add User',
+                            style: TextStyle(
+                                color: _kMint,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
 
       body: SafeArea(
@@ -299,120 +702,274 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             color: color.withValues(alpha: 0.38),
                             borderRadius: BorderRadius.circular(24),
                           ),
-                          child: Row(
+                          child: Column(
                             children: [
+                              Row(
+                                children: [
 
-                              // Avatar — initials box
-                              Container(
-                                width: 48, height: 48,
-                                decoration: BoxDecoration(
-                                  color: _kWhite.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    _initials(user.name),
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w900,
-                                        color: _kInk),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // User info
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(user.name ?? 'Unknown',
+                                  // Avatar — initials box
+                                  Container(
+                                    width: 48, height: 48,
+                                    decoration: BoxDecoration(
+                                      color: _kWhite.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        _initials(user.name),
                                         style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w800,
-                                            color: _kInk,
-                                            letterSpacing: -0.3)),
-                                    const SizedBox(height: 4),
-                                    Row(children: [
-                                      Container(
-                                        width: 18, height: 18,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              _kWhite.withValues(alpha: 0.5),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                        child: const Icon(
-                                            Icons.phone_outlined,
-                                            size: 10,
-                                            color: _kInk2),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w900,
+                                            color: _kInk),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(user.phone,
-                                          style: const TextStyle(
-                                              fontSize: 11,
-                                              color: _kInk2)),
-                                    ]),
-                                  ],
-                                ),
-                              ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
 
-                              // Role Dropdown — logic completely unchanged
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _kWhite.withValues(alpha: 0.55),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: DropdownButton<String>(
-                                  value: user.role.toLowerCase().trim(),
-                                  underline: const SizedBox(),
-                                  isDense: true,
-                                  icon: Icon(Icons.arrow_drop_down,
-                                      color: roleColor, size: 18),
-                                  style: TextStyle(
-                                      color: roleColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700),
-                                  items: _validRoles.map((role) {
-                                    return DropdownMenuItem<String>(
-                                      value: role,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            _getRoleIcon(role),
-                                            size: 13,
-                                            color: _getRoleColor(role),
+                                  // User info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(user.name ?? 'Unknown',
+                                            style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w800,
+                                                color: _kInk,
+                                                letterSpacing: -0.3)),
+                                        const SizedBox(height: 4),
+                                        // Email
+                                        Row(children: [
+                                          Container(
+                                            width: 18, height: 18,
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  _kWhite.withValues(alpha: 0.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: const Icon(
+                                                Icons.email_outlined,
+                                                size: 10,
+                                                color: _kInk2),
                                           ),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            role[0].toUpperCase() +
-                                                role.substring(1),
-                                            style: TextStyle(
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(user.email ?? 'N/A',
+                                                style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: _kInk2),
+                                                overflow: TextOverflow.ellipsis),
+                                          ),
+                                        ]),
+                                        const SizedBox(height: 4),
+                                        // Phone
+                                        Row(children: [
+                                          Container(
+                                            width: 18, height: 18,
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  _kWhite.withValues(alpha: 0.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: const Icon(
+                                                Icons.phone_outlined,
+                                                size: 10,
+                                                color: _kInk2),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(user.phone,
+                                              style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: _kInk2)),
+                                          const SizedBox(width: 8),
+                                          // Profile status badge
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: user.profileCompleted
+                                                  ? _kMint.withValues(alpha: 0.25)
+                                                  : _kPeach.withValues(alpha: 0.25),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  user.profileCompleted
+                                                      ? Icons.check_circle
+                                                      : Icons
+                                                          .pending_actions,
+                                                  size: 10,
+                                                  color: user.profileCompleted
+                                                      ? _kMint
+                                                      : _kPeach,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  user.profileCompleted
+                                                      ? 'Complete'
+                                                      : 'Pending',
+                                                  style: TextStyle(
+                                                      fontSize: 8,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: user
+                                                              .profileCompleted
+                                                          ? _kMint
+                                                          : _kPeach),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ]),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Role Dropdown — logic completely unchanged
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _kWhite.withValues(alpha: 0.55),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: user.role.toLowerCase().trim(),
+                                      underline: const SizedBox(),
+                                      isDense: true,
+                                      icon: Icon(Icons.arrow_drop_down,
+                                          color: roleColor, size: 18),
+                                      style: TextStyle(
+                                          color: roleColor,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700),
+                                      items: _validRoles.map((role) {
+                                        return DropdownMenuItem<String>(
+                                          value: role,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                _getRoleIcon(role),
+                                                size: 13,
                                                 color: _getRoleColor(role),
-                                                fontSize: 12,
-                                                fontWeight:
-                                                    FontWeight.w700),
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                role[0].toUpperCase() +
+                                                    role.substring(1),
+                                                style: TextStyle(
+                                                    color: _getRoleColor(role),
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w700),
+                                              ),
+                                            ],
                                           ),
-                                        ],
+                                        );
+                                      }).toList(),
+                                      onChanged: (newRole) async {
+                                        if (newRole == null) return;
+                                        await AdminUserService.updateUserRole(
+                                          userId: user.id,
+                                          role: newRole,
+                                        );
+                                        setState(() {
+                                          usersFuture =
+                                              AdminUserService.fetchUsers();
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              // Edit and Delete buttons
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () => _showEditUserDialog(context, user),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: _kSky.withValues(alpha: 0.25),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                                color: _kSky.withValues(
+                                                    alpha: 0.4)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: const [
+                                              Icon(Icons.edit,
+                                                  color: _kSky, size: 14),
+                                              SizedBox(width: 6),
+                                              Text('Edit',
+                                                  style: TextStyle(
+                                                      color: _kSky,
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (newRole) async {
-                                    if (newRole == null) return;
-                                    await AdminUserService.updateUserRole(
-                                      userId: user.id,
-                                      role: newRole,
-                                    );
-                                    setState(() {
-                                      usersFuture =
-                                          AdminUserService.fetchUsers();
-                                    });
-                                  },
-                                ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () =>
+                                            _showDeleteConfirmDialog(context, user),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEF4444)
+                                                .withValues(alpha: 0.25),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                                color: const Color(0xFFEF4444)
+                                                    .withValues(alpha: 0.4)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: const [
+                                              Icon(Icons.delete_outline,
+                                                  color: Color(0xFFEF4444),
+                                                  size: 14),
+                                              SizedBox(width: 6),
+                                              Text('Delete',
+                                                  style: TextStyle(
+                                                      color: Color(0xFFEF4444),
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

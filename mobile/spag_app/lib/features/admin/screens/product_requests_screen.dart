@@ -73,9 +73,11 @@ class _ProductRequestsScreenState extends State<ProductRequestsScreen> {
   }
 
   List<ProductRequest> get _filteredRequests => _requests.where((r) =>
+      (r.customerId?.toString() ?? '').contains(_searchQuery) ||
       r.id.toString().contains(_searchQuery) ||
       r.status.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      r.phone.contains(_searchQuery)).toList();
+      r.phone.contains(_searchQuery) ||
+      r.customerName.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'COMPLETED':
@@ -413,12 +415,50 @@ class _RequestCardState extends State<_RequestCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Request #${r.id}',
+                  // Customer Name
+                  Text(r.customerName,
                       style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           color: _kInk,
-                          letterSpacing: -0.3)),
+                          letterSpacing: -0.5),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 3),
+                  // Request ID
+                  Text('Request ID: ${r.id}',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _kInk2,
+                          letterSpacing: -0.2)),
+                  const SizedBox(height: 6),
+                  // Phone Number - Prominent
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _kMint.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _kMint.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('📞',
+                            style: TextStyle(fontSize: 12)),
+                        const SizedBox(width: 6),
+                        Text(r.phone,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _kInk)),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   // Status chip
                   Container(
@@ -442,24 +482,6 @@ class _RequestCardState extends State<_RequestCard> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  // Phone
-                  Row(children: [
-                    Container(
-                      width: 16, height: 16,
-                      decoration: BoxDecoration(
-                        color: _kWhite.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                          child: Text('📞',
-                              style: TextStyle(fontSize: 8))),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(r.phone,
-                        style: const TextStyle(
-                            fontSize: 11, color: _kInk2)),
-                  ]),
                 ],
               ),
             ),

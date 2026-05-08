@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/api/api_config.dart';
 import '../../auth/services/auth_service.dart';
@@ -10,6 +11,13 @@ class AdminService {
   static Future<List<dynamic>> getProductRequests() async {
     final token = await AuthService.getToken();
 
+    debugPrint('');
+    debugPrint('╔═══════════════════════════════════════════════════════════════╗');
+    debugPrint('║          FETCHING PRODUCT REQUESTS FROM API                   ║');
+    debugPrint('╚═══════════════════════════════════════════════════════════════╝');
+    debugPrint('URL: ${ApiConfig.baseUrl}/admin/product-requests');
+    debugPrint('Token: ${token != null ? 'Present' : 'Missing'}');
+    
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/product-requests'),
       headers: token == null
@@ -20,11 +28,31 @@ class AdminService {
             },
     );
 
+    debugPrint('');
+    debugPrint('Status Code: ${response.statusCode}');
+    debugPrint('Response Body:');
+    debugPrint(response.body);
+    debugPrint('');
+
     if (response.statusCode != 200) {
+      debugPrint('❌ ERROR: Failed to load product requests');
       throw Exception('Failed to load product requests');
     }
 
-    return jsonDecode(response.body);
+    final data = jsonDecode(response.body);
+    debugPrint('✅ Successfully parsed response');
+    debugPrint('Number of requests: ${(data as List).length}');
+    
+    if ((data as List).isNotEmpty) {
+      debugPrint('');
+      debugPrint('First Request Data Structure:');
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      final firstRequest = jsonEncode(data.first);
+      debugPrint(firstRequest);
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+
+    return data;
   }
 
   // -------------------------------

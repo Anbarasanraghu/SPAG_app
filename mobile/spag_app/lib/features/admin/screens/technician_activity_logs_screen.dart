@@ -67,13 +67,20 @@ class _TechnicianActivityLogsScreenState
   }
 
   Color _actionColor(String action) {
-    switch (action) {
-      case 'COMPLETED':
+    switch (action.toUpperCase()) {
+      case 'INSTALLATION_COMPLETED':
+        return const Color(0xFF10B981);
+      case 'SERVICE_COMPLETED':
         return const Color(0xFF10B981);
       case 'ASSIGNED':
         return const Color(0xFF3B82F6);
-      default:
+      case 'IN_PROGRESS':
+      case 'SERVICE_STARTED':
+        return const Color(0xFF8B5CF6);
+      case 'PENDING':
         return const Color(0xFFF59E0B);
+      default:
+        return const Color(0xFF6B7280);
     }
   }
 
@@ -275,14 +282,13 @@ class _TechnicianActivityLogsScreenState
                         child: Column(
                           children: List.generate(logs.length, (index) {
                             final log = logs[index];
-                            final serviceId = log['service_id'] ??
-                                log['serviceId'] ??
-                                log['id'];
-                            final customerId = log['customer_id'] ??
-                                log['customerId'] ??
-                                log['customer_id'];
+                            final logId = log['id'];
                             final action =
                                 log['action']?.toString() ?? '';
+                            final createdAt = log['created_at'] ?? '-';
+                            final technician = log['technician'] as Map<String, dynamic>?;
+                            final techName = technician?['name'] ?? 'Unknown';
+                            final techPhone = technician?['phone'] ?? '-';
                             final color = _cardColor(index);
 
                             return Padding(
@@ -291,20 +297,12 @@ class _TechnicianActivityLogsScreenState
                               child: _LogCard(
                                 log: log,
                                 action: action,
-                                serviceId: serviceId,
+                                logId: logId,
+                                technicianName: techName,
+                                technicianPhone: techPhone,
+                                createdAt: createdAt,
                                 color: color,
                                 actionColor: _actionColor(action),
-                                onTap: customerId != null
-                                    ? () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                CustomerDetailScreen(
-                                                    customerId:
-                                                        customerId),
-                                          ),
-                                        )
-                                    : null,
                               ),
                             );
                           }),
@@ -325,18 +323,22 @@ class _TechnicianActivityLogsScreenState
 class _LogCard extends StatefulWidget {
   final dynamic log;
   final String action;
-  final dynamic serviceId;
+  final dynamic logId;
+  final String technicianName;
+  final String technicianPhone;
+  final dynamic createdAt;
   final Color color;
   final Color actionColor;
-  final VoidCallback? onTap;
 
   const _LogCard({
     required this.log,
     required this.action,
-    required this.serviceId,
+    required this.logId,
+    required this.technicianName,
+    required this.technicianPhone,
+    required this.createdAt,
     required this.color,
     required this.actionColor,
-    this.onTap,
   });
 
   @override
@@ -346,13 +348,28 @@ class _LogCard extends StatefulWidget {
 class _LogCardState extends State<_LogCard> {
   bool _pressed = false;
 
+  String _formatAction(String action) {
+    return action
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  String _formatDate(dynamic dateStr) {
+    if (dateStr == null || dateStr == '-') return '-';
+    try {
+      final date = DateTime.parse(dateStr.toString());
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateStr.toString().substring(0, 16);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final log = widget.log;
-    final when = log['logged_at'] ?? log['created_at'] ?? '-';
-
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: () {},
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
@@ -365,87 +382,128 @@ class _LogCardState extends State<_LogCard> {
           color: widget.color.withValues(alpha: 0.38),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Action icon box
-            Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: _kWhite.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(Icons.run_circle,
-                  color: widget.actionColor, size: 22),
-            ),
-            const SizedBox(width: 14),
-
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.action.isEmpty ? '-' : widget.action,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: _kInk,
-                        letterSpacing: -0.3),
+            // Top row: Action + Status indicator
+            Row(
+              children: [
+                // Action icon box
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: _kWhite.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  const SizedBox(height: 6),
-                  // Service + When row
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _kWhite.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Svc: ${widget.serviceId ?? '-'}',
+                  child: Icon(Icons.check_circle_outline,
+                      color: widget.actionColor, size: 22),
+                ),
+                const SizedBox(width: 14),
+                // Action text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatAction(widget.action),
                         style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: _kInk2),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: _kInk,
+                            letterSpacing: -0.3),
                       ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: widget.actionColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'ID: ${widget.logId}',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: widget.actionColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            // Technician info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: _kWhite.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: widget.actionColor.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _kWhite.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        when.toString().length > 16
-                            ? when.toString().substring(0, 16)
-                            : when.toString(),
-                        style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: _kInk2),
-                      ),
+                    child: Center(
+                      child: Icon(Icons.person,
+                          size: 16, color: widget.actionColor),
                     ),
-                  ]),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.technicianName,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _kInk),
+                        ),
+                        Text(
+                          widget.technicianPhone,
+                          style: const TextStyle(
+                              fontSize: 10,
+                              color: _kInk2),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
+            const SizedBox(height: 10),
 
-            // Arrow chip (only if tappable)
-            if (widget.onTap != null)
-              Container(
-                width: 30, height: 30,
-                decoration: BoxDecoration(
-                  color: _kWhite.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.arrow_forward_ios,
-                    size: 12, color: _kInk),
+            // Timestamp
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _kInk2.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.access_time,
+                      size: 12, color: _kInk2),
+                  const SizedBox(width: 6),
+                  Text(
+                    _formatDate(widget.createdAt),
+                    style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: _kInk2),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
